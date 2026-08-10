@@ -78,38 +78,32 @@ function animate() {
 
     if (moviendoCamara) {
 
-        const tiempoActual = performance.now()
+    const tiempoActual = performance.now()
 
-        const progreso = Math.min(
-            (tiempoActual - tiempoInicio) / 1000,
-            1
-        )
+    const progreso = Math.min(
+        (tiempoActual - tiempoInicio) / 1000,
+        1
+    )
 
-        camera.position.lerpVectors(
-            posicionInicio,
-            posicionDestino,
-            progreso
-        )
-
-camera.rotation.set(
-    THREE.MathUtils.lerp(
-        rotacionInicio.x,
-        rotacionDestino.x,
+    camera.position.lerpVectors(
+        posicionInicio,
+        posicionDestino,
         progreso
-    ),
-    THREE.MathUtils.lerp(
-        rotacionInicio.y,
-        rotacionDestino.y,
-        progreso
-    ),
-    0,
-    'YXZ'
-)
+    )
 
-        if (progreso >= 1) {
-            moviendoCamara = false
-        }
+    camera.quaternion.slerpQuaternions(
+        rotacionInicio,
+        rotacionDestino,
+        progreso
+    )
+
+    if (progreso >= 1) {
+        camera.position.copy(posicionDestino)
+        camera.quaternion.copy(rotacionDestino)
+        moviendoCamara = false
+
     }
+}
 
     renderer.render(scene, camera)
 }
@@ -133,7 +127,7 @@ let MiraEntrada
 let MiraCarteles
 let MiraLogo
 
-let posicionCamara
+
 let arrastrando = false
 let moviendoCamara = false
 
@@ -141,24 +135,38 @@ let posicionInicio = new THREE.Vector3()
 let posicionDestino = new THREE.Vector3()
 let tiempoInicio = 0
 
-let rotacionInicio = new THREE.Euler()
-let rotacionDestino = new THREE.Euler()
+let rotacionInicio = new THREE.Quaternion()
+let rotacionDestino = new THREE.Quaternion()
+
+let miraDestino = null
+
+let posicionMira = new THREE.Vector3()
+
+let posicionPunto = new THREE.Vector3()
 
 const objetosInteractivos = []
 
 function irASuave(punto, mira) {
 
-    posicionInicio.copy(camera.position)
-    posicionDestino.copy(punto.position)
-
-    rotacionInicio.copy(camera.rotation)
-
     camera.rotation.order = 'YXZ'
-    camera.lookAt(mira.position)
 
-    rotacionDestino.copy(camera.rotation)
+    punto.getWorldPosition(posicionPunto)
+    mira.getWorldPosition(posicionMira)
 
-    camera.rotation.copy(rotacionInicio)
+    posicionInicio.copy(camera.position)
+    posicionDestino.copy(posicionPunto)
+
+    rotacionInicio.copy(camera.quaternion)
+
+    // Calculamos la orientación desde el punto DESTINO
+    camera.position.copy(posicionDestino)
+    camera.lookAt(posicionMira)
+
+    rotacionDestino.copy(camera.quaternion)
+
+    // Regresamos al inicio
+    camera.position.copy(posicionInicio)
+    camera.quaternion.copy(rotacionInicio)
 
     tiempoInicio = performance.now()
 
@@ -167,14 +175,16 @@ function irASuave(punto, mira) {
 
 function irA(punto, mira) {
 
-    camera.position.copy(punto.position)
-
     camera.rotation.order = 'YXZ'
 
-    camera.lookAt(mira.position)
+    punto.getWorldPosition(posicionPunto)
+    mira.getWorldPosition(posicionMira)
+
+    camera.position.copy(posicionPunto)
+
+    camera.lookAt(posicionMira)
 
     camera.rotation.z = 0
-
 }
 
 loader.load(
@@ -224,12 +234,25 @@ renderer.domElement.addEventListener('pointerdown', () => {
 
 })
 
+if (arrastrando && !moviendoCamara) {
+
+    camera.rotation.y -= event.movementX * 0.005
+
+    camera.rotation.x -= event.movementY * 0.003
+
+    camera.rotation.x = Math.max(
+        -Math.PI / 2,
+        Math.min(Math.PI / 2, camera.rotation.x)
+    )
+
+    camera.rotation.z = 0
+}
+
 renderer.domElement.addEventListener('pointermove', (event) => {
 
     if (arrastrando) {
 
-       camera.rotation.y -= event.movementX * 0.005
-
+        camera.rotation.y -= event.movementX * 0.005
         camera.rotation.x -= event.movementY * 0.003
 
         camera.rotation.x = Math.max(
