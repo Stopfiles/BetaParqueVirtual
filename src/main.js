@@ -158,9 +158,6 @@ function irASuave(punto, mira) {
 
     rotacionDestino.copy(camera.rotation)
 
-    console.log("X inicial:", rotacionInicio.x)
-console.log("X destino:", rotacionDestino.x)
-
     camera.rotation.copy(rotacionInicio)
 
     tiempoInicio = performance.now()
