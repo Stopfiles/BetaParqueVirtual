@@ -188,7 +188,7 @@ function irA(punto, mira) {
 }
 
 loader.load(
-  '/ParqueLigero8.glb',
+  '/ParquePrueba1.glb',
   function (gltf) {
 
     const model = gltf.scene
