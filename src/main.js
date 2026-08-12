@@ -11,6 +11,7 @@ renderer.setSize(
   window.innerHeight
 )
 renderer.shadowMap.enabled = true
+
 document.body.appendChild(renderer.domElement)
 
 //Create a new scene
@@ -37,16 +38,49 @@ camera.position.y = 1.7
 const textureLoader = new THREE.TextureLoader();
 
 textureLoader.load('/autumn_hill_view_1k.jpg', function(texture) {
-    scene.background = texture;
+
+const geometry = new THREE.SphereGeometry(500, 60, 40);
+
+const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.BackSide
+});
+
+const sky = new THREE.Mesh(geometry, material);
+
+sky.rotation.y = Math.PI;
+
+scene.add(sky);
+
 });
 
 //Setup the lights
-const light = new THREE.DirectionalLight(0xffd9a0, 1)
-light.position.set(50, 100, 50)
+const light = new THREE.DirectionalLight(0xfffefa, 2)
+light.position.set(-80, 100, 1)
 light.castShadow = true
+
+light.shadow.camera.left = -90
+light.shadow.camera.right = 90
+light.shadow.camera.top = 110
+light.shadow.camera.bottom = -110
+
+light.shadow.camera.near = 0.1
+light.shadow.camera.far = 500
+
+light.shadow.mapSize.width = 2048
+light.shadow.mapSize.height = 2048
+
+light.shadow.bias = -0.0001
+light.shadow.normalBias = 0.1
+
 scene.add(light)
 
-light.target.position.set(0, 0, 0)
+light.target.position.set(
+    0.8836536407470703,
+    10.993981840344102,
+    -2.2952842712402344
+)
+
 scene.add(light.target)
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 1)
@@ -175,6 +209,21 @@ loader.load(
   function (gltf) {
 
     const model = gltf.scene
+
+    const box = new THREE.Box3().setFromObject(model)
+const center = box.getCenter(new THREE.Vector3())
+const size = box.getSize(new THREE.Vector3())
+
+        model.traverse(function (child) {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+
+                if (child.material.map) {
+            child.material.alphaTest = 0.5
+        }
+      }
+    })
 
     scene.add(model)
 
