@@ -34,28 +34,11 @@ camera.position.y = 1.7
 //controls.update()
 
 //Setup the sky
-const sky = new Sky()
+const textureLoader = new THREE.TextureLoader();
 
-sky.scale.setScalar(450000)
-
-scene.add(sky)
-
-const skyUniforms = sky.material.uniforms
-
-skyUniforms['turbidity'].value = 6
-skyUniforms['rayleigh'].value = 1
-skyUniforms['mieCoefficient'].value = 0.005
-skyUniforms['mieDirectionalG'].value = 0.8
-
-const sun = new THREE.Vector3()
-
-sun.setFromSphericalCoords(
-1,
-Math.PI / 2.5,
-Math.PI / 4
-)
-
-sky.material.uniforms['sunPosition'].value.copy(sun)
+textureLoader.load('/autumn_hill_view_1k.jpg', function(texture) {
+    scene.background = texture;
+});
 
 //Setup the lights
 const light = new THREE.DirectionalLight(0xffd9a0, 1)
@@ -188,7 +171,7 @@ function irA(punto, mira) {
 }
 
 loader.load(
-  '/ParqueLigero8.glb',
+  '/ParquePrueba1.glb',
   function (gltf) {
 
     const model = gltf.scene
