@@ -88,45 +88,6 @@ scene.add(ambientLight)
 
 const speed = 0.15
 
-//Render loop
-function animate() {
-
-    requestAnimationFrame(animate)
-
-    if (moviendoCamara) {
-
-    const tiempoActual = performance.now()
-
-    const progreso = Math.min(
-        (tiempoActual - tiempoInicio) / 1000,
-        1
-    )
-
-    camera.position.lerpVectors(
-        posicionInicio,
-        posicionDestino,
-        progreso
-    )
-
-    camera.quaternion.slerpQuaternions(
-        rotacionInicio,
-        rotacionDestino,
-        progreso
-    )
-
-    if (progreso >= 1) {
-        camera.position.copy(posicionDestino)
-        camera.quaternion.copy(rotacionDestino)
-        moviendoCamara = false
-
-    }
-}
-
-    renderer.render(scene, camera)
-}
-
-//----------------//
-
 const loader = new GLTFLoader()
 
 let letrero1
@@ -161,7 +122,123 @@ let posicionMira = new THREE.Vector3()
 
 let posicionPunto = new THREE.Vector3()
 
+const billboards = []
+
+const sombrasBillboards = []
+
 const objetosInteractivos = []
+
+//Loader para el modelo GLB 
+loader.load(
+  '/ParquePrueba1.glb',
+  function (gltf) {
+
+    const model = gltf.scene
+
+    const posicionesBillboards = new Set()
+
+model.traverse((child) => {
+
+    if (!child.isMesh) return
+    if (!child.name.toLowerCase().includes("arbol")) return
+
+    const x = child.position.x.toFixed(3)
+    const y = child.position.y.toFixed(3)
+    const z = child.position.z.toFixed(3)
+
+    const clave = `${x}_${y}_${z}`
+
+    if (posicionesBillboards.has(clave)) {
+
+         sombrasBillboards.push(child)
+
+    } else {
+
+        // Es el primero → lo dejamos
+        posicionesBillboards.add(clave)
+        billboards.push(child)
+
+    }
+
+})
+
+        model.traverse(function (child) {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+
+                if (child.material.map) {
+            child.material.alphaTest = 0.5
+        }
+      }
+    })
+
+    billboards.forEach(arbol => {
+    arbol.castShadow = false
+        arbol.receiveShadow = false
+})
+
+sombrasBillboards.forEach(arbol => {
+    arbol.castShadow = true
+})
+
+sombrasBillboards.forEach(arbol => {
+
+    arbol.material = arbol.material.clone()
+
+    arbol.material.transparent = true
+    arbol.material.opacity = 0
+    arbol.material.depthWrite = false
+
+})
+
+
+
+    scene.add(model)
+
+    window.parqueModel = model
+
+    letrero1 = model.getObjectByName("Letrero_1")
+    letrero2 = model.getObjectByName("Letrero2")
+
+    botonEntrada = model.getObjectByName("BotonEntrada")
+botonCarteles = model.getObjectByName("BotonCarteles")
+botonLogo = model.getObjectByName("BotonLogo")
+
+entrada = model.getObjectByName("Entrada")
+carteles = model.getObjectByName("Carteles")
+logo = model.getObjectByName("Logo")
+
+MiraEntrada = model.getObjectByName("MiraEntrada")
+MiraCarteles = model.getObjectByName("MiraCarteles")
+MiraLogo = model.getObjectByName("MiraLogo")
+
+  irA(entrada, MiraEntrada)
+
+objetosInteractivos.push(letrero1)
+objetosInteractivos.push(letrero2)
+
+objetosInteractivos.push(botonEntrada)
+objetosInteractivos.push(botonCarteles)
+objetosInteractivos.push(botonLogo)
+
+  }
+)
+
+function actualizarBillboards() {
+
+    billboards.forEach(arbol => {
+
+        const dx = camera.position.x - arbol.position.x
+        const dz = camera.position.z - arbol.position.z
+
+        const angulo = Math.atan2(dz, dx)
+
+        arbol.rotation.z = angulo + Math.PI / 2
+
+    })
+
+}
 
 function irASuave(punto, mira) {
 
@@ -203,58 +280,6 @@ function irA(punto, mira) {
 
     camera.rotation.z = 0
 }
-
-loader.load(
-  '/ParquePrueba1.glb',
-  function (gltf) {
-
-    const model = gltf.scene
-
-    const box = new THREE.Box3().setFromObject(model)
-const center = box.getCenter(new THREE.Vector3())
-const size = box.getSize(new THREE.Vector3())
-
-        model.traverse(function (child) {
-      if (child.isMesh) {
-        child.castShadow = true
-        child.receiveShadow = true
-
-                if (child.material.map) {
-            child.material.alphaTest = 0.5
-        }
-      }
-    })
-
-    scene.add(model)
-
-    window.parqueModel = model
-
-    letrero1 = model.getObjectByName("Letrero_1")
-    letrero2 = model.getObjectByName("Letrero2")
-
-    botonEntrada = model.getObjectByName("BotonEntrada")
-botonCarteles = model.getObjectByName("BotonCarteles")
-botonLogo = model.getObjectByName("BotonLogo")
-
-entrada = model.getObjectByName("Entrada")
-carteles = model.getObjectByName("Carteles")
-logo = model.getObjectByName("Logo")
-
-MiraEntrada = model.getObjectByName("MiraEntrada")
-MiraCarteles = model.getObjectByName("MiraCarteles")
-MiraLogo = model.getObjectByName("MiraLogo")
-
-  irA(entrada, MiraEntrada)
-
-objetosInteractivos.push(letrero1)
-objetosInteractivos.push(letrero2)
-
-objetosInteractivos.push(botonEntrada)
-objetosInteractivos.push(botonCarteles)
-objetosInteractivos.push(botonLogo)
-
-  }
-)
 
 const raycaster = new THREE.Raycaster()
 //Donde hace click el usuario
@@ -334,5 +359,46 @@ irASuave(logo, MiraLogo)
 }
 }
 )
+
+//Render loop Animación
+function animate() {
+
+    requestAnimationFrame(animate)
+
+    if (moviendoCamara) {
+
+    const tiempoActual = performance.now()
+
+    const progreso = Math.min(
+        (tiempoActual - tiempoInicio) / 2000,
+        1
+    )
+
+    camera.position.lerpVectors(
+        posicionInicio,
+        posicionDestino,
+        progreso
+    )
+
+    camera.quaternion.slerpQuaternions(
+        rotacionInicio,
+        rotacionDestino,
+        progreso
+    )
+
+    if (progreso >= 1) {
+        camera.position.copy(posicionDestino)
+        camera.quaternion.copy(rotacionDestino)
+        moviendoCamara = false
+
+    }
+}
+
+actualizarBillboards()
+
+    renderer.render(scene, camera)
+}
+
+//----------------//
 
 animate()
