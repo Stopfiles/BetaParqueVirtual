@@ -5,11 +5,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 
 //Setup the renderer
-const renderer = new THREE.WebGLRenderer()
-renderer.setSize(
-  window.innerWidth,
-  window.innerHeight
-)
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+})
+renderer.setSize(window.innerWidth, window.innerHeight)
+
 renderer.shadowMap.enabled = true
 
 document.body.appendChild(renderer.domElement)
@@ -39,7 +39,10 @@ const textureLoader = new THREE.TextureLoader();
 
 textureLoader.load('/autumn_hill_view_1k.jpg', function(texture) {
 
-const geometry = new THREE.SphereGeometry(500, 60, 40);
+const envMap = pmremGenerator.fromEquirectangular(texture).texture
+scene.environment = envMap
+
+    const geometry = new THREE.SphereGeometry(500, 60, 40);
 
 const material = new THREE.MeshBasicMaterial({
     map: texture,
@@ -135,12 +138,114 @@ loader.load(
 
     const model = gltf.scene
 
+    model.traverse((child) => {
+
+    if (!child.isMesh || !child.material) return
+
+    if (child.material.name === "Cemento") {
+
+        child.material.metalness = 0
+        child.material.roughness = 1
+
+        child.material.needsUpdate = true
+
+    }
+                    if (child.material.name === "Base") {
+
+        child.material.metalness = 0
+        child.material.roughness = 3
+
+        child.material.needsUpdate = true
+
+    }
+            if (child.material.name === "Materiall #54") {
+
+        child.material.metalness = 0
+        child.material.roughness = 2
+
+        child.material.needsUpdate = true
+
+    }
+        if (child.material.name === "Metal") {
+
+        child.material.metalness = 1
+        child.material.roughness = 0.1
+
+        child.material.needsUpdate = true
+
+    }
+                if (child.material.name === "Negro") {
+
+        child.material.metalness = 1
+        child.material.roughness = 1.6
+
+        child.material.needsUpdate = true
+
+    }
+            if (child.material.name === "Ventana") {
+
+        child.material.metalness = 0
+        child.material.roughness = 0.03
+
+        child.material.needsUpdate = true
+
+    }
+                if (child.material.name === "Blanco") {
+
+        child.material.metalness = 1
+        child.material.roughness = 2
+
+        child.material.needsUpdate = true
+
+    }
+            if (child.material.name === "pUERTA") { 
+
+        child.material.metalness = 0
+        child.material.roughness = 2.5
+
+        child.material.needsUpdate = true
+
+    }
+            if (child.material.name === "metal") {
+
+        child.material.metalness = 0.5
+        child.material.roughness = 2
+
+        child.material.needsUpdate = true
+
+    }
+
+})
+
+    model.traverse((child) => {
+    if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+
+        if (child.material?.map) {
+            child.material.alphaTest = 0.5
+        }
+    }
+})
+
     const posicionesBillboards = new Set()
 
 model.traverse((child) => {
 
     if (!child.isMesh) return
-    if (!child.name.toLowerCase().includes("arbol")) return
+const nombre = child.name.toLowerCase()
+
+    if (child.name === "Plano") return
+
+if (
+    !nombre.includes("arbol") &&
+    !nombre.includes("piedra") &&
+    !nombre.includes("plano")
+) return
+
+if (child.name === "Plano") return
+
+console.log("BILLBOARD:", child.name)
 
     const x = child.position.x.toFixed(3)
     const y = child.position.y.toFixed(3)
@@ -162,16 +267,20 @@ model.traverse((child) => {
 
 })
 
-        model.traverse(function (child) {
-      if (child.isMesh) {
-        child.castShadow = true
-        child.receiveShadow = true
+model.traverse((child) => {
 
-                if (child.material.map) {
-            child.material.alphaTest = 0.5
-        }
-      }
-    })
+    if (child.isMesh && child.material?.map) {
+
+        const texture = child.material.map
+
+        texture.minFilter = THREE.LinearMipmapLinearFilter
+        texture.magFilter = THREE.LinearFilter
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy()
+
+        texture.needsUpdate = true
+    }
+
+})
 
     billboards.forEach(arbol => {
     arbol.castShadow = false
@@ -224,6 +333,8 @@ objetosInteractivos.push(botonLogo)
 
   }
 )
+
+const pmremGenerator = new THREE.PMREMGenerator(renderer)
 
 function actualizarBillboards() {
 
@@ -396,7 +507,7 @@ function animate() {
 
 actualizarBillboards()
 
-    renderer.render(scene, camera)
+renderer.render(scene, camera)
 }
 
 //----------------//
