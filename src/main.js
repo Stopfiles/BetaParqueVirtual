@@ -1,6 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 
@@ -8,6 +9,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js'
 const renderer = new THREE.WebGLRenderer({
     antialias: true
 })
+
 renderer.setSize(window.innerWidth, window.innerHeight)
 
 renderer.shadowMap.enabled = true
@@ -35,6 +37,7 @@ camera.position.y = 1.7
 //controls.update()
 
 //Setup the sky
+
 const textureLoader = new THREE.TextureLoader();
 
 textureLoader.load('/autumn_hill_view_1k.jpg', function(texture) {
@@ -92,6 +95,7 @@ scene.add(ambientLight)
 const speed = 0.15
 
 const loader = new GLTFLoader()
+loader.setMeshoptDecoder(MeshoptDecoder)
 
 let letrero1
 let letrero2
@@ -133,7 +137,7 @@ const objetosInteractivos = []
 
 //Loader para el modelo GLB 
 loader.load(
-  '/ParquePrueba1.glb',
+  '/ParquePT3Meshopt.glb',
   function (gltf) {
 
     const model = gltf.scene
@@ -146,6 +150,8 @@ loader.load(
 
         child.material.metalness = 0
         child.material.roughness = 1
+
+                    child.material.normalScale.set(3, 3)
 
         child.material.needsUpdate = true
 
@@ -211,6 +217,24 @@ loader.load(
         child.material.metalness = 0.5
         child.material.roughness = 2
 
+            child.material.normalScale.set(5, 5)
+
+        child.material.needsUpdate = true
+
+    }
+                if (child.material.name === "Ladrillos") {
+
+            child.material.roughness = 5
+    child.material.normalScale.set(2, 2)
+
+        child.material.needsUpdate = true
+
+    }
+
+                    if (child.material.name === "Piedritas") {
+
+    child.material.normalScale.set(5, 5)
+
         child.material.needsUpdate = true
 
     }
@@ -235,17 +259,26 @@ model.traverse((child) => {
     if (!child.isMesh) return
 const nombre = child.name.toLowerCase()
 
-    if (child.name === "Plano") return
-
 if (
     !nombre.includes("arbol") &&
     !nombre.includes("piedra") &&
-    !nombre.includes("plano")
+    ![
+        "plano002",
+        "plano003",
+        "plano004",
+        "plano005",
+        "plano006",
+        "plano007",
+        "plano008",
+        "plano009",
+        "plano010",
+        "plano011",
+        "plano012",
+        "plano013",
+        "plano014",
+        "plano015"
+    ].includes(nombre)
 ) return
-
-if (child.name === "Plano") return
-
-console.log("BILLBOARD:", child.name)
 
     const x = child.position.x.toFixed(3)
     const y = child.position.y.toFixed(3)
@@ -300,8 +333,6 @@ sombrasBillboards.forEach(arbol => {
     arbol.material.depthWrite = false
 
 })
-
-
 
     scene.add(model)
 
