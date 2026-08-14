@@ -35,40 +35,15 @@ const gradiente = contexto.createLinearGradient(
     512
 )
 
-gradiente.addColorStop(0, 'rgba(200,200,200,0)')
-gradiente.addColorStop(0.35, 'rgba(200,200,200,0.05)')
-gradiente.addColorStop(0.7, 'rgba(200,200,200,0.35)')
-gradiente.addColorStop(1, 'rgba(200,200,200,0.75)')
+gradiente.addColorStop(0, 'rgba(190,185,160,0)')
+gradiente.addColorStop(0.35, 'rgba(190,185,160,0.05)')
+gradiente.addColorStop(0.7, 'rgba(190,185,160,0.35)')
+gradiente.addColorStop(1, 'rgba(190,185,160,0.75)')
 
 contexto.fillStyle = gradiente
 contexto.fillRect(0, 0, 512, 512)
 
 const texturaNiebla = new THREE.CanvasTexture(canvasNiebla)
-
-const geometriaNiebla = new THREE.CylinderGeometry(
-    120,
-    120,
-    60,
-    64,
-    1,
-    true
-)
-
-const materialNiebla = new THREE.MeshBasicMaterial({
-    map: texturaNiebla,
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide
-})
-
-const niebla = new THREE.Mesh(
-    geometriaNiebla,
-    materialNiebla
-)
-
-niebla.position.set(0, 20, 0)
-
-scene.add(niebla)
 
 //Setup the camera
 const camera = new THREE.PerspectiveCamera(
@@ -515,11 +490,61 @@ objetosInteractivos.push(botonLogo)
   }
 )
 
+function crearCapaNiebla(radio, opacidad) {
+
+    const geometria = new THREE.CylinderGeometry(
+        radio,
+        radio,
+        60,
+        64,
+        1,
+        true
+    )
+
+    const material = new THREE.MeshBasicMaterial({
+        map: texturaNiebla,
+        transparent: true,
+        opacity: opacidad,
+        depthWrite: false,
+        side: THREE.DoubleSide
+    })
+
+    const capa = new THREE.Mesh(
+        geometria,
+        material
+    )
+
+    capa.position.set(0, 20, 0)
+
+        capa.renderOrder = 1
+
+    scene.add(capa)
+}
+
+crearCapaNiebla(69, 0.01)
+crearCapaNiebla(69.5, 0.02)
+crearCapaNiebla(70, 0.03)
+crearCapaNiebla(70.5, 0.04)
+crearCapaNiebla(71, 0.05)
+crearCapaNiebla(72, 0.06)
+crearCapaNiebla(73, 0.07)
+crearCapaNiebla(74, 0.1)
+crearCapaNiebla(75, 0.2)
+crearCapaNiebla(76, 0.3)
+crearCapaNiebla(78, 0.4)
+crearCapaNiebla(80, 0.5)
+crearCapaNiebla(83, 0.7)
+
 const pmremGenerator = new THREE.PMREMGenerator(renderer)
 
 function actualizarBillboards() {
 
     billboards.forEach(arbol => {
+
+            arbol.castShadow = false
+    arbol.receiveShadow = false
+        
+        arbol.renderOrder = 2
 
         const dx = camera.position.x - arbol.position.x
         const dz = camera.position.z - arbol.position.z
@@ -720,6 +745,19 @@ irASuave(logo, MiraLogo)
 }
 }
 )
+
+window.addEventListener('resize', () => {
+
+    camera.aspect = window.innerWidth / window.innerHeight
+
+    camera.updateProjectionMatrix()
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    )
+
+})
 
 //Render loop Animación
 function animate() {
