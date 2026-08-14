@@ -16,6 +16,17 @@ renderer.shadowMap.enabled = true
 
 document.body.appendChild(renderer.domElement)
 
+const mensajeBienvenida = document.createElement('div')
+
+mensajeBienvenida.id = 'mensajeBienvenida'
+
+mensajeBienvenida.innerHTML = `
+    <h1>Parque Funerario San Martín</h1>
+    <p>Explora nuestro espacio</p>
+`
+
+document.body.appendChild(mensajeBienvenida)
+
 //Create a new scene
 const scene = new THREE.Scene()
 
@@ -130,6 +141,10 @@ let botonEntrada
 let botonCarteles
 let botonLogo
 
+let luzCarteles
+let hoverCarteles = false
+let tiempoLuzCarteles = 0
+
 let entrada
 let carteles
 let logo
@@ -155,6 +170,10 @@ let posicionMira = new THREE.Vector3()
 
 let posicionPunto = new THREE.Vector3()
 
+let bienvenidaMostrada = false
+
+let duracionTransicion = 4500
+
 const billboards = []
 
 const billboardsNuevos = []
@@ -162,6 +181,8 @@ const billboardsNuevos = []
 const sombrasBillboards = []
 
 const objetosInteractivos = []
+
+const pantallaCarga = document.getElementById('pantallaCarga')
 
 //Loader para el modelo GLB 
 loader.load(
@@ -375,6 +396,31 @@ sombrasBillboards.forEach(arbol => {
 botonCarteles = model.getObjectByName("BotonCarteles")
 botonLogo = model.getObjectByName("BotonLogo")
 
+botonEntrada.material.transparent = true
+botonEntrada.material.opacity = 0
+
+botonCarteles.material.transparent = true
+botonCarteles.material.opacity = 0
+
+botonLogo.material.transparent = true
+botonLogo.material.opacity = 0
+
+luzCarteles = new THREE.PointLight(
+    0xfff1c7,
+    0.8,
+    12
+)
+
+botonCarteles.getWorldPosition(posicionPunto)
+
+luzCarteles.position.copy(posicionPunto)
+
+console.log("LUZ CARTELES:", luzCarteles.position)
+
+luzCarteles.position.y += 2
+
+scene.add(luzCarteles)
+
 entrada = model.getObjectByName("Entrada")
 carteles = model.getObjectByName("Carteles")
 logo = model.getObjectByName("Logo")
@@ -383,7 +429,22 @@ MiraEntrada = model.getObjectByName("MiraEntrada")
 MiraCarteles = model.getObjectByName("MiraCarteles")
 MiraLogo = model.getObjectByName("MiraLogo")
 
-  irA(entrada, MiraEntrada)
+    iniciarExperiencia()
+
+// La animación comienza mientras todavía estamos cubriendo la pantalla
+tiempoInicio = performance.now()
+moviendoCamara = true
+
+// Después dejamos descubrir el parque
+setTimeout(() => {
+
+    pantallaCarga.style.opacity = '0'
+
+    setTimeout(() => {
+        pantallaCarga.style.display = 'none'
+    }, 1000)
+
+}, 100)
 
 //Norte
 crearVegetacion(
@@ -639,8 +700,56 @@ function crearVegetacion(ruta, cantidad, inicioX, inicioZ, finX, finZ, escalaMin
         )
     }
 }
+function iniciarExperiencia() {
+
+    duracionTransicion = 2000
+
+    camera.rotation.order = 'YXZ'
+
+    // Posición final
+    entrada.getWorldPosition(posicionDestino)
+
+    // Punto al que debe mirar
+    MiraEntrada.getWorldPosition(posicionMira)
+
+    // Calculamos la rotación final
+    camera.position.copy(posicionDestino)
+    camera.lookAt(posicionMira)
+
+    // Evitamos que la cámara pueda quedar inclinada
+    camera.rotation.z = 0
+
+    rotacionDestino.copy(camera.quaternion)
+
+    // Regresamos a la posición inicial
+    camera.position.copy(posicionDestino)
+
+    // Nos alejamos hacia atrás
+    camera.position.x += -3
+
+    // Miramos nuevamente hacia la entrada
+    camera.lookAt(posicionMira)
+
+    // Evitamos el giro de cabeza
+    camera.rotation.z = 0
+
+    posicionInicio.copy(camera.position)
+    rotacionInicio.copy(camera.quaternion)
+
+    tiempoInicio = performance.now()
+
+    moviendoCamara = false
+}
+
+function easeInOutSine(t) {
+
+    return -(Math.cos(Math.PI * t) - 1) / 2
+
+}
 
 function irASuave(punto, mira) {
+
+    duracionTransicion = 4500
 
     camera.rotation.order = 'YXZ'
 
@@ -685,29 +794,26 @@ const raycaster = new THREE.Raycaster()
 //Donde hace click el usuario
 const mouse = new THREE.Vector2()
 
+let objetoHover = null
+
+const indicadorInteractivo = document.createElement('div')
+
+indicadorInteractivo.id = 'indicadorInteractivo'
+
+document.body.appendChild(indicadorInteractivo)
+
 renderer.domElement.addEventListener('pointerdown', () => {
 
     arrastrando = true
-
 })
-
-if (arrastrando && !moviendoCamara) {
-
-    camera.rotation.y -= event.movementX * 0.005
-
-    camera.rotation.x -= event.movementY * 0.003
-
-    camera.rotation.x = Math.max(
-        -Math.PI / 2,
-        Math.min(Math.PI / 2, camera.rotation.x)
-    )
-
-    camera.rotation.z = 0
-}
 
 renderer.domElement.addEventListener('pointermove', (event) => {
 
-    if (arrastrando) {
+    // =========================
+    // MOVIMIENTO DE CÁMARA
+    // =========================
+
+    if (arrastrando && !moviendoCamara) {
 
         camera.rotation.y -= event.movementX * 0.005
         camera.rotation.x -= event.movementY * 0.003
@@ -718,6 +824,72 @@ renderer.domElement.addEventListener('pointermove', (event) => {
         )
 
         camera.rotation.z = 0
+    }
+
+
+    // =========================
+    // HOVER DE OBJETOS
+    // =========================
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+    raycaster.setFromCamera(mouse, camera)
+
+    const intersecciones = raycaster.intersectObjects(
+        objetosInteractivos,
+        true
+    )
+
+    if (intersecciones.length > 0) {
+
+        const objeto = intersecciones[0].object
+
+if (objeto !== objetoHover) {
+
+    objetoHover = objeto
+
+    if (objeto.name === "BotonEntrada") {
+
+        indicadorInteractivo.textContent = "Explorar entrada"
+        indicadorInteractivo.classList.add('visible')
+
+         hoverCarteles = false
+
+    } else if (objeto.name === "BotonCarteles") {
+
+        indicadorInteractivo.textContent = "Explorar carteles"
+        indicadorInteractivo.classList.add('visible')
+        
+        hoverCarteles = true
+
+    } else if (objeto.name === "BotonLogo") {
+
+        indicadorInteractivo.textContent = "Conocer San Martín"
+        indicadorInteractivo.classList.add('visible')
+
+         hoverCarteles = false
+
+    } else {
+
+        indicadorInteractivo.classList.remove('visible')
+        hoverCarteles = false
+
+    }
+}
+
+indicadorInteractivo.style.left = `${event.clientX}px`
+indicadorInteractivo.style.top = `${event.clientY}px`
+
+    } else {
+
+        if (objetoHover !== null) {
+
+            objetoHover = null
+
+            indicadorInteractivo.classList.remove('visible')
+                hoverCarteles = false
+        }
     }
 
 })
@@ -741,8 +913,6 @@ const intersecciones = raycaster.intersectObjects(
 if (intersecciones.length > 0) {
 
    const nombre = intersecciones[0].object.name
-
-console.log("Click en:", nombre)
 
 if (nombre === "BotonEntrada") {
     irASuave(entrada, MiraEntrada)
@@ -782,34 +952,60 @@ function animate() {
 
     const tiempoActual = performance.now()
 
-    const progreso = Math.min(
-        (tiempoActual - tiempoInicio) / 2000,
-        1
-    )
+const progreso = Math.min(
+    (tiempoActual - tiempoInicio) / duracionTransicion,
+    1
+)
 
-    camera.position.lerpVectors(
-        posicionInicio,
-        posicionDestino,
-        progreso
-    )
+const progresoSuave = easeInOutSine(progreso)
 
-    camera.quaternion.slerpQuaternions(
-        rotacionInicio,
-        rotacionDestino,
-        progreso
-    )
+camera.position.lerpVectors(
+    posicionInicio,
+    posicionDestino,
+    progresoSuave
+)
 
-    if (progreso >= 1) {
-        camera.position.copy(posicionDestino)
-        camera.quaternion.copy(rotacionDestino)
-        moviendoCamara = false
+camera.quaternion.slerpQuaternions(
+    rotacionInicio,
+    rotacionDestino,
+    progresoSuave
+)
 
-    }
+if (progreso >= 1) {
+
+    camera.position.copy(posicionDestino)
+    camera.quaternion.copy(rotacionDestino)
+    moviendoCamara = false
+
+if (!bienvenidaMostrada) {
+
+    bienvenidaMostrada = true
+
+    setTimeout(() => {
+
+        mensajeBienvenida.classList.add('visible')
+
+        setTimeout(() => {
+            mensajeBienvenida.classList.remove('visible')
+        }, 4000)
+
+    }, 500)
+
+}
+}
+
 }
 
 actualizarBillboards()
 
+if (luzCarteles) {
+
+    luzCarteles.intensity = 5
+
+}
+
 renderer.render(scene, camera)
+
 }
 
 //----------------//
