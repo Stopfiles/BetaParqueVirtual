@@ -35,10 +35,10 @@ const gradiente = contexto.createLinearGradient(
     512
 )
 
-gradiente.addColorStop(0, 'rgba(190,185,160,0)')
-gradiente.addColorStop(0.35, 'rgba(190,185,160,0.05)')
-gradiente.addColorStop(0.7, 'rgba(190,185,160,0.35)')
-gradiente.addColorStop(1, 'rgba(190,185,160,0.75)')
+gradiente.addColorStop(0, 'rgba(227,225,214,0)')
+gradiente.addColorStop(0.35, 'rgba(227,225,214,0.05)')
+gradiente.addColorStop(0.7, 'rgba(227,225,214,0.35)')
+gradiente.addColorStop(1, 'rgba(227,225,214,0.75)')
 
 contexto.fillStyle = gradiente
 contexto.fillRect(0, 0, 512, 512)
@@ -165,7 +165,7 @@ const objetosInteractivos = []
 
 //Loader para el modelo GLB 
 loader.load(
-  '/ParquePT3Meshopt.glb',
+  '/ParquePT4Meshopt.glb',
   function (gltf) {
 
     const model = gltf.scene
@@ -325,7 +325,6 @@ if (
         billboards.push(child)
 
     }
-
 })
 
 model.traverse((child) => {
@@ -350,6 +349,7 @@ model.traverse((child) => {
 
 sombrasBillboards.forEach(arbol => {
     arbol.castShadow = true
+
 })
 
 sombrasBillboards.forEach(arbol => {
@@ -389,7 +389,8 @@ crearVegetacion(
     10,
     -95, -110,
     95, -110,
-    14, 32
+    14, 32,
+    0, -10
 )
 
 crearVegetacion(
@@ -397,7 +398,8 @@ crearVegetacion(
     10,
     -95, -115,
     95, -115,
-    15, 30
+    15, 30,
+    0, -10
 )
 
 crearVegetacion(
@@ -405,7 +407,8 @@ crearVegetacion(
     5,
     -90, -120,
     90, -120,
-    6, 30
+    6, 30,
+    0, -10
 )
 //Sur
 crearVegetacion(
@@ -413,7 +416,8 @@ crearVegetacion(
     10,
     -95, 105,
     95, 105,
-    14, 24
+    14, 24,
+    5, 1
 )
 
 crearVegetacion(
@@ -421,7 +425,8 @@ crearVegetacion(
     10,
     -95, 110,
     95, 110,
-    15, 30
+    15, 30,
+    5, 1
 )
 
 crearVegetacion(
@@ -429,7 +434,8 @@ crearVegetacion(
     5,
     -90, 115,
     90, 115,
-    6, 30
+    6, 30,
+    5, 1
 )
 //Oeste
 crearVegetacion(
@@ -437,7 +443,8 @@ crearVegetacion(
     10,
     -90, -100,
     -90, 100,
-    14, 34
+    14, 34,
+    0, -30
 )
 
 crearVegetacion(
@@ -445,7 +452,8 @@ crearVegetacion(
     10,
     -95, -100,
     -95, 100,
-    15, 30
+    15, 30,
+    0, -30
 )
 
 crearVegetacion(
@@ -453,7 +461,8 @@ crearVegetacion(
     5,
     -100, -90,
     -100, 90,
-    6, 22
+    6, 22,
+    0, -30
 )
 //Este
 crearVegetacion(
@@ -461,7 +470,8 @@ crearVegetacion(
     10,
     90, -100,
     90, 100,
-    14, 26
+    14, 26,
+    0, 50
 )
 
 crearVegetacion(
@@ -469,7 +479,8 @@ crearVegetacion(
     10,
     95, -100,
     95, 100,
-    15, 30
+    15, 30,
+    0, 50
 )
 
 crearVegetacion(
@@ -477,7 +488,8 @@ crearVegetacion(
     5,
     100, -90,
     100, 90,
-    6, 28
+    6, 28,
+    0, 50
 )
 
 objetosInteractivos.push(letrero1)
@@ -521,19 +533,19 @@ function crearCapaNiebla(radio, opacidad) {
     scene.add(capa)
 }
 
-crearCapaNiebla(69, 0.01)
-crearCapaNiebla(69.5, 0.02)
-crearCapaNiebla(70, 0.03)
-crearCapaNiebla(70.5, 0.04)
-crearCapaNiebla(71, 0.05)
-crearCapaNiebla(72, 0.06)
-crearCapaNiebla(73, 0.07)
-crearCapaNiebla(74, 0.1)
-crearCapaNiebla(75, 0.2)
-crearCapaNiebla(76, 0.3)
-crearCapaNiebla(78, 0.4)
-crearCapaNiebla(80, 0.5)
-crearCapaNiebla(83, 0.7)
+crearCapaNiebla(89, 0.01)
+crearCapaNiebla(89.5, 0.02)
+crearCapaNiebla(90, 0.03)
+crearCapaNiebla(90.5, 0.04)
+crearCapaNiebla(91, 0.05)
+crearCapaNiebla(92, 0.06)
+crearCapaNiebla(93, 0.07)
+crearCapaNiebla(94, 0.1)
+crearCapaNiebla(95, 0.2)
+crearCapaNiebla(96, 0.3)
+crearCapaNiebla(98, 0.4)
+crearCapaNiebla(100, 1)
+crearCapaNiebla(105, 1.9)
 
 const pmremGenerator = new THREE.PMREMGenerator(renderer)
 
@@ -600,7 +612,7 @@ function crearBillboard(ruta, x, y, z, escala) {
 }
 
 
-function crearVegetacion(ruta, cantidad, inicioX, inicioZ, finX, finZ, escalaMin, escalaMax) {
+function crearVegetacion(ruta, cantidad, inicioX, inicioZ, finX, finZ, escalaMin, escalaMax, desplazamientoZ = 0, desplazamientoX = 0) {
 
     for (let i = 0; i < cantidad; i++) {
 
@@ -618,9 +630,9 @@ function crearVegetacion(ruta, cantidad, inicioX, inicioZ, finX, finZ, escalaMin
 
         crearBillboard(
             ruta,
-            x + variacionX,
-            0,
-            z + variacionZ,
+            x + variacionX + desplazamientoX,
+            6,
+            z + variacionZ + desplazamientoZ,
             escala
         )
     }
