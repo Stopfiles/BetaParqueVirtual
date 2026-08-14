@@ -291,6 +291,8 @@ if (
     !nombre.includes("arbol") &&
     !nombre.includes("piedra") &&
     ![
+        "plano",
+        "plano001",
         "plano002",
         "plano003",
         "plano004",
@@ -356,7 +358,7 @@ sombrasBillboards.forEach(arbol => {
 
     arbol.material = arbol.material.clone()
 
-    arbol.material.transparent = true
+        arbol.material.transparent = true
     arbol.material.opacity = 0
     arbol.material.depthWrite = false
 
@@ -471,7 +473,7 @@ crearVegetacion(
     90, -100,
     90, 100,
     14, 26,
-    0, 50
+    0, 70
 )
 
 crearVegetacion(
@@ -480,7 +482,7 @@ crearVegetacion(
     95, -100,
     95, 100,
     15, 30,
-    0, 50
+    0, 70
 )
 
 crearVegetacion(
@@ -489,7 +491,7 @@ crearVegetacion(
     100, -90,
     100, 90,
     6, 28,
-    0, 50
+    0, 70
 )
 
 objetosInteractivos.push(letrero1)
