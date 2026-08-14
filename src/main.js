@@ -19,6 +19,57 @@ document.body.appendChild(renderer.domElement)
 //Create a new scene
 const scene = new THREE.Scene()
 
+// 🌫️ Bruma de horizonte
+
+const canvasNiebla = document.createElement('canvas')
+
+canvasNiebla.width = 512
+canvasNiebla.height = 512
+
+const contexto = canvasNiebla.getContext('2d')
+
+const gradiente = contexto.createLinearGradient(
+    0,
+    0,
+    0,
+    512
+)
+
+gradiente.addColorStop(0, 'rgba(200,200,200,0)')
+gradiente.addColorStop(0.35, 'rgba(200,200,200,0.05)')
+gradiente.addColorStop(0.7, 'rgba(200,200,200,0.35)')
+gradiente.addColorStop(1, 'rgba(200,200,200,0.75)')
+
+contexto.fillStyle = gradiente
+contexto.fillRect(0, 0, 512, 512)
+
+const texturaNiebla = new THREE.CanvasTexture(canvasNiebla)
+
+const geometriaNiebla = new THREE.CylinderGeometry(
+    120,
+    120,
+    60,
+    64,
+    1,
+    true
+)
+
+const materialNiebla = new THREE.MeshBasicMaterial({
+    map: texturaNiebla,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide
+})
+
+const niebla = new THREE.Mesh(
+    geometriaNiebla,
+    materialNiebla
+)
+
+niebla.position.set(0, 20, 0)
+
+scene.add(niebla)
+
 //Setup the camera
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -130,6 +181,8 @@ let posicionMira = new THREE.Vector3()
 let posicionPunto = new THREE.Vector3()
 
 const billboards = []
+
+const billboardsNuevos = []
 
 const sombrasBillboards = []
 
@@ -355,6 +408,103 @@ MiraLogo = model.getObjectByName("MiraLogo")
 
   irA(entrada, MiraEntrada)
 
+//Norte
+crearVegetacion(
+    '/Fondo/Arbol11-2k.png',
+    10,
+    -95, -110,
+    95, -110,
+    14, 32
+)
+
+crearVegetacion(
+    '/Fondo/Arbol21-2k.png',
+    10,
+    -95, -115,
+    95, -115,
+    15, 30
+)
+
+crearVegetacion(
+    '/Fondo/Cactus1.png',
+    5,
+    -90, -120,
+    90, -120,
+    6, 30
+)
+//Sur
+crearVegetacion(
+    '/Fondo/Arbol11-2k.png',
+    10,
+    -95, 105,
+    95, 105,
+    14, 24
+)
+
+crearVegetacion(
+    '/Fondo/Arbol21-2k.png',
+    10,
+    -95, 110,
+    95, 110,
+    15, 30
+)
+
+crearVegetacion(
+    '/Fondo/Cactus1.png',
+    5,
+    -90, 115,
+    90, 115,
+    6, 30
+)
+//Oeste
+crearVegetacion(
+    '/Fondo/Arbol11-2k.png',
+    10,
+    -90, -100,
+    -90, 100,
+    14, 34
+)
+
+crearVegetacion(
+    '/Fondo/Arbol21-2k.png',
+    10,
+    -95, -100,
+    -95, 100,
+    15, 30
+)
+
+crearVegetacion(
+    '/Fondo/Cactus1.png',
+    5,
+    -100, -90,
+    -100, 90,
+    6, 22
+)
+//Este
+crearVegetacion(
+    '/Fondo/Arbol11-2k.png',
+    10,
+    90, -100,
+    90, 100,
+    14, 26
+)
+
+crearVegetacion(
+    '/Fondo/Arbol21-2k.png',
+    10,
+    95, -100,
+    95, 100,
+    15, 30
+)
+
+crearVegetacion(
+    '/Fondo/Cactus1.png',
+    5,
+    100, -90,
+    100, 90,
+    6, 28
+)
+
 objetosInteractivos.push(letrero1)
 objetosInteractivos.push(letrero2)
 
@@ -380,6 +530,75 @@ function actualizarBillboards() {
 
     })
 
+        billboardsNuevos.forEach(arbol => {
+
+        const dx = camera.position.x - arbol.position.x
+        const dz = camera.position.z - arbol.position.z
+
+        const angulo = Math.atan2(dx, dz)
+
+        arbol.rotation.y = angulo
+
+    })
+
+}
+
+function crearBillboard(ruta, x, y, z, escala) {
+
+    textureLoader.load(ruta, function(texture) {
+
+        const ancho = texture.image.width
+        const alto = texture.image.height
+
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            alphaTest: 0.5,
+            side: THREE.DoubleSide
+        })
+
+        const proporcion = ancho / alto
+
+        const geometry = new THREE.PlaneGeometry(proporcion, 1)
+
+        const arbol = new THREE.Mesh(geometry, material)
+
+        arbol.position.set(x, y, z)
+
+        arbol.scale.set(escala, escala, escala)
+
+        scene.add(arbol)
+
+        billboardsNuevos.push(arbol)
+
+    })
+}
+
+
+function crearVegetacion(ruta, cantidad, inicioX, inicioZ, finX, finZ, escalaMin, escalaMax) {
+
+    for (let i = 0; i < cantidad; i++) {
+
+        const progreso = i / (cantidad - 1)
+
+        const x = inicioX + (finX - inicioX) * progreso
+        const z = inicioZ + (finZ - inicioZ) * progreso
+
+        const variacionX = (Math.random() - 0.5) * 12
+        const variacionZ = (Math.random() - 0.5) * 12
+
+        const escala =
+            escalaMin +
+            Math.random() * (escalaMax - escalaMin)
+
+        crearBillboard(
+            ruta,
+            x + variacionX,
+            0,
+            z + variacionZ,
+            escala
+        )
+    }
 }
 
 function irASuave(punto, mira) {
