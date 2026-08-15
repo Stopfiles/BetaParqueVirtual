@@ -27,6 +27,38 @@ mensajeBienvenida.innerHTML = `
 
 document.body.appendChild(mensajeBienvenida)
 
+const panelCarteles = document.createElement('div')
+
+panelCarteles.id = 'panelCarteles'
+
+panelCarteles.innerHTML = `
+    <h2>Carteles</h2>
+
+    <p>Aquí podremos colocar la información de esta sección.</p>
+
+    <button id="cerrarPanelCarteles">Cerrar</button>
+`
+
+document.body.appendChild(panelCarteles)
+
+const cerrarPanelCarteles = document.getElementById('cerrarPanelCarteles')
+
+const panelLogo = document.createElement('div')
+
+panelLogo.id = 'panelLogo'
+
+panelLogo.innerHTML = `
+    <h2>San Martín</h2>
+
+    <p>Aquí podremos colocar la información de Parque Funerario San Martín.</p>
+
+    <button id="cerrarPanelLogo">Cerrar</button>
+`
+
+document.body.appendChild(panelLogo)
+
+const cerrarPanelLogo = document.getElementById('cerrarPanelLogo')
+
 //Create a new scene
 const scene = new THREE.Scene()
 
@@ -55,6 +87,8 @@ contexto.fillStyle = gradiente
 contexto.fillRect(0, 0, 512, 512)
 
 const texturaNiebla = new THREE.CanvasTexture(canvasNiebla)
+
+const capasNiebla = []
 
 //Setup the camera
 const camera = new THREE.PerspectiveCamera(
@@ -141,9 +175,15 @@ let botonEntrada
 let botonCarteles
 let botonLogo
 
+let luzEntrada
 let luzCarteles
+let luzLogo
+
+let hoverEntrada = false
 let hoverCarteles = false
-let tiempoLuzCarteles = 0
+let hoverLogo = false
+
+let tiempoLuz = 0
 
 let entrada
 let carteles
@@ -174,9 +214,15 @@ let bienvenidaMostrada = false
 
 let duracionTransicion = 4500
 
+let seccionDestino = null
+
 const billboards = []
 
 const billboardsNuevos = []
+
+const animacionesVegetacion = []
+
+const animacionesBillboardsGLB = []
 
 const sombrasBillboards = []
 
@@ -337,17 +383,35 @@ if (
 
     const clave = `${x}_${y}_${z}`
 
-    if (posicionesBillboards.has(clave)) {
+if (posicionesBillboards.has(clave)) {
 
-         sombrasBillboards.push(child)
+    sombrasBillboards.push(child)
 
-    } else {
+} else {
 
-        // Es el primero → lo dejamos
-        posicionesBillboards.add(clave)
-        billboards.push(child)
+    // Es el primero → lo dejamos
+    posicionesBillboards.add(clave)
 
-    }
+    billboards.push(child)
+
+    if (nombre.includes("arbol")) {
+
+    animacionesBillboardsGLB.push({
+
+        objeto: child,
+
+        fase: Math.random() * Math.PI * 2,
+
+        amplitud: 0.008 + Math.random() * 0.007,
+
+        velocidad: 0.4 + Math.random() * 0.3,
+
+        rotacionXBase: child.rotation.x
+
+    })
+
+}
+}
 })
 
 model.traverse((child) => {
@@ -405,21 +469,43 @@ botonCarteles.material.opacity = 0
 botonLogo.material.transparent = true
 botonLogo.material.opacity = 0
 
+luzEntrada = new THREE.PointLight(
+    0xfff1c7,
+    0.8,
+    500
+)
+
+botonEntrada.getWorldPosition(posicionPunto)
+luzEntrada.position.copy(posicionPunto)
+luzEntrada.position.y += 0.2
+
+scene.add(luzEntrada)
+
+
 luzCarteles = new THREE.PointLight(
     0xfff1c7,
     0.8,
-    12
+    500
 )
 
 botonCarteles.getWorldPosition(posicionPunto)
-
 luzCarteles.position.copy(posicionPunto)
-
-console.log("LUZ CARTELES:", luzCarteles.position)
-
-luzCarteles.position.y += 2
+luzCarteles.position.y += 0.2
 
 scene.add(luzCarteles)
+
+
+luzLogo = new THREE.PointLight(
+    0xfff1c7,
+    0.8,
+    500
+)
+
+botonLogo.getWorldPosition(posicionPunto)
+luzLogo.position.copy(posicionPunto)
+luzLogo.position.y += 0.2
+
+scene.add(luzLogo)
 
 entrada = model.getObjectByName("Entrada")
 carteles = model.getObjectByName("Carteles")
@@ -594,6 +680,11 @@ function crearCapaNiebla(radio, opacidad) {
         capa.renderOrder = 1
 
     scene.add(capa)
+
+    capasNiebla.push({
+    capa: capa,
+    opacidadBase: opacidad
+})
 }
 
 crearCapaNiebla(89, 0.01)
@@ -637,7 +728,8 @@ function actualizarBillboards() {
 
         const angulo = Math.atan2(dx, dz)
 
-        arbol.rotation.y = angulo
+arbol.userData.rotacionBillboardBase = angulo
+arbol.rotation.y = angulo
 
     })
 
@@ -667,9 +759,18 @@ function crearBillboard(ruta, x, y, z, escala) {
 
         arbol.scale.set(escala, escala, escala)
 
+        arbol.userData.rotacionZBase = arbol.rotation.z
+
         scene.add(arbol)
 
         billboardsNuevos.push(arbol)
+
+animacionesVegetacion.push({
+    objeto: arbol,
+    fase: Math.random() * Math.PI * 2,
+    amplitud: 0.035 + Math.random() * 0.035,
+    velocidad: 0.4 + Math.random() * 0.3
+})
 
     })
 }
@@ -747,7 +848,9 @@ function easeInOutSine(t) {
 
 }
 
-function irASuave(punto, mira) {
+function irASuave(punto, mira, seccion = null) {
+
+    seccionDestino = seccion
 
     duracionTransicion = 4500
 
@@ -849,33 +952,41 @@ if (objeto !== objetoHover) {
 
     objetoHover = objeto
 
-    if (objeto.name === "BotonEntrada") {
+   if (objeto.name === "BotonEntrada") {
 
-        indicadorInteractivo.textContent = "Explorar entrada"
-        indicadorInteractivo.classList.add('visible')
+    indicadorInteractivo.textContent = "Explorar entrada"
+    indicadorInteractivo.classList.add('visible')
 
-         hoverCarteles = false
+    hoverEntrada = true
+    hoverCarteles = false
+    hoverLogo = false
 
-    } else if (objeto.name === "BotonCarteles") {
+} else if (objeto.name === "BotonCarteles") {
 
-        indicadorInteractivo.textContent = "Explorar carteles"
-        indicadorInteractivo.classList.add('visible')
-        
-        hoverCarteles = true
+    indicadorInteractivo.textContent = "Explorar carteles"
+    indicadorInteractivo.classList.add('visible')
 
-    } else if (objeto.name === "BotonLogo") {
+    hoverEntrada = false
+    hoverCarteles = true
+    hoverLogo = false
 
-        indicadorInteractivo.textContent = "Conocer San Martín"
-        indicadorInteractivo.classList.add('visible')
+} else if (objeto.name === "BotonLogo") {
 
-         hoverCarteles = false
+    indicadorInteractivo.textContent = "Conocer San Martín"
+    indicadorInteractivo.classList.add('visible')
 
-    } else {
+    hoverEntrada = false
+    hoverCarteles = false
+    hoverLogo = true
 
-        indicadorInteractivo.classList.remove('visible')
-        hoverCarteles = false
+} else {
 
-    }
+    indicadorInteractivo.classList.remove('visible')
+
+    hoverEntrada = false
+    hoverCarteles = false
+    hoverLogo = false
+}
 }
 
 indicadorInteractivo.style.left = `${event.clientX}px`
@@ -888,7 +999,9 @@ indicadorInteractivo.style.top = `${event.clientY}px`
             objetoHover = null
 
             indicadorInteractivo.classList.remove('visible')
-                hoverCarteles = false
+                    hoverEntrada = false
+    hoverCarteles = false
+    hoverLogo = false
         }
     }
 
@@ -897,6 +1010,18 @@ indicadorInteractivo.style.top = `${event.clientY}px`
 document.addEventListener('pointerup', () => {
 
     arrastrando = false
+
+})
+
+cerrarPanelCarteles.addEventListener('click', () => {
+
+    panelCarteles.classList.remove('visible')
+
+})
+
+cerrarPanelLogo.addEventListener('click', () => {
+
+    panelLogo.classList.remove('visible')
 
 })
 
@@ -918,13 +1043,13 @@ if (nombre === "BotonEntrada") {
     irASuave(entrada, MiraEntrada)
 }
 
-    if (nombre === "BotonCarteles") {
-irASuave(carteles, MiraCarteles)
-    }
+if (nombre === "BotonCarteles") {
+    irASuave(carteles, MiraCarteles, "carteles")
+}
 
-    if (nombre === "BotonLogo") {
-irASuave(logo, MiraLogo)
-    }
+if (nombre === "BotonLogo") {
+    irASuave(logo, MiraLogo, "logo")
+}
 
 }
 }
@@ -977,6 +1102,19 @@ if (progreso >= 1) {
     camera.quaternion.copy(rotacionDestino)
     moviendoCamara = false
 
+if (seccionDestino === "carteles") {
+
+    panelCarteles.classList.add('visible')
+
+    seccionDestino = null
+
+} else if (seccionDestino === "logo") {
+
+    panelLogo.classList.add('visible')
+
+    seccionDestino = null
+}
+
 if (!bienvenidaMostrada) {
 
     bienvenidaMostrada = true
@@ -998,9 +1136,79 @@ if (!bienvenidaMostrada) {
 
 actualizarBillboards()
 
+const tiempoNiebla = performance.now() * 0.00015
+
+const pulsoNiebla =
+    (Math.sin(tiempoNiebla) + 1) / 2
+
+capasNiebla.forEach(niebla => {
+
+    const factor =
+        0.92 + pulsoNiebla * 0.16
+
+    niebla.capa.material.opacity =
+        niebla.opacidadBase * factor
+
+})
+
+const tiempoVientoGLB = performance.now() * 0.001
+
+animacionesBillboardsGLB.forEach(animacion => {
+
+    const movimiento =
+        Math.sin(
+            tiempoVientoGLB * animacion.velocidad +
+            animacion.fase
+        ) * animacion.amplitud
+
+    animacion.objeto.rotation.x =
+        animacion.rotacionXBase + movimiento
+
+})
+
+const tiempoViento = performance.now() * 0.001
+
+animacionesVegetacion.forEach(animacion => {
+
+    const movimiento =
+        Math.sin(
+            tiempoViento * animacion.velocidad +
+            animacion.fase
+        ) * animacion.amplitud
+        
+animacion.objeto.rotation.z =
+    animacion.objeto.userData.rotacionZBase + movimiento
+
+})
+
+tiempoLuz += 0.012
+
+const pulso = (Math.sin(tiempoLuz) + 1) / 2
+
+
+if (luzEntrada) {
+
+    luzEntrada.intensity = hoverEntrada
+        ? 5 + pulso * 2
+        : 2 + pulso * 1
+
+}
+
+
 if (luzCarteles) {
 
-    luzCarteles.intensity = 5
+    luzCarteles.intensity = hoverCarteles
+        ? 5 + pulso * 2
+        : 2 + pulso * 1
+
+}
+
+
+if (luzLogo) {
+
+    luzLogo.intensity = hoverLogo
+        ? 5 + pulso * 2
+        : 2 + pulso * 1
 
 }
 

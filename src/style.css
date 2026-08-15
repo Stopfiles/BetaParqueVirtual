@@ -124,3 +124,171 @@ canvas {
 #indicadorInteractivo.visible {
     opacity: 1;
 }
+#panelCarteles {
+    position: fixed;
+
+    right: 5%;
+    top: 50%;
+
+    transform: translateY(-50%) translateX(30px);
+
+    width: min(380px, 80vw);
+
+    padding: 28px;
+
+    background: rgba(16, 28, 44, 0.92);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    border-radius: 6px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease;
+
+    z-index: 20;
+}
+
+#panelCarteles.visible {
+    opacity: 1;
+
+    transform: translateY(-50%) translateX(0);
+        pointer-events: auto;
+}
+
+#panelCarteles h2 {
+    margin: 0 0 12px;
+
+    font-size: 1.6rem;
+
+    font-weight: 400;
+}
+
+#panelCarteles p {
+    margin: 0;
+
+    line-height: 1.6;
+
+    opacity: 0.8;
+}
+#cerrarPanelCarteles {
+    margin-top: 24px;
+
+    padding: 8px 18px;
+
+    background: transparent;
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    border-radius: 3px;
+
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease;
+}
+
+#cerrarPanelCarteles:hover {
+    background: rgba(255, 255, 255, 0.12);
+
+    border-color: white;
+}
+#panelLogo {
+    position: fixed;
+
+    left: 5%;
+    top: 50%;
+
+    transform: translateY(-50%) translateX(-30px);
+
+    width: min(380px, 80vw);
+
+    padding: 28px;
+
+    background: rgba(16, 28, 44, 0.92);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    border-radius: 6px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease;
+
+    z-index: 20;
+}
+
+#panelLogo.visible {
+    opacity: 1;
+
+    transform: translateY(-50%) translateX(0);
+
+    pointer-events: auto;
+}
+
+#panelLogo h2 {
+    margin: 0 0 12px;
+
+    font-size: 1.6rem;
+
+    font-weight: 400;
+}
+
+#panelLogo p {
+    margin: 0;
+
+    line-height: 1.6;
+
+    opacity: 0.8;
+}
+
+#cerrarPanelLogo {
+    margin-top: 24px;
+
+    padding: 8px 18px;
+
+    background: transparent;
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    border-radius: 3px;
+
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease;
+}
+
+#cerrarPanelLogo:hover {
+    background: rgba(255, 255, 255, 0.12);
+
+    border-color: white;
+}
