@@ -97,6 +97,94 @@ cerrarPanelLetrero.addEventListener('click', () => {
 
 })
 
+const botonUbicacion = document.createElement('button')
+
+botonUbicacion.id = 'botonUbicacion'
+botonUbicacion.textContent = 'Ubicación'
+
+document.body.appendChild(botonUbicacion)
+
+const panelMapa = document.createElement('div')
+
+panelMapa.id = 'panelMapa'
+
+panelMapa.innerHTML = `
+
+    <div class="mapaContenedor">
+
+        <div class="mapaEscala">
+
+            <img
+                src="/mapa.png"
+                alt="Mapa del Parque Funerario San Martín"
+            >
+
+            <button
+                id="botonMapaEstacionamiento"
+                class="botonMapa botonEstacionamiento"
+            >
+                Estacionamiento
+            </button>
+
+            <button
+                id="botonMapaNichos"
+                class="botonMapa botonNichos"
+            >
+                Nichos
+            </button>
+
+            <button
+                id="botonMapaEntrada"
+                class="botonMapa botonEntrada"
+            >
+                Entrada
+            </button>
+
+        </div>
+
+    </div>
+
+        <button id="botonOcultarMapa">
+        Ocultar
+    </button>
+
+`
+
+document.body.appendChild(panelMapa)
+
+botonUbicacion.addEventListener('click', () => {
+
+    panelMapa.classList.add('visible')
+
+})
+
+const botonOcultarMapa = document.getElementById('botonOcultarMapa')
+
+botonOcultarMapa.addEventListener('click', () => {
+
+    panelMapa.classList.remove('visible')
+
+})
+
+const botonMapaEntrada =
+    document.getElementById('botonMapaEntrada')
+
+const botonMapaNichos =
+    document.getElementById('botonMapaNichos')
+
+const botonMapaEstacionamiento =
+    document.getElementById('botonMapaEstacionamiento')
+
+const pantallaProximamente = document.createElement('div')
+
+pantallaProximamente.id = 'pantallaProximamente'
+
+pantallaProximamente.innerHTML = `
+    <h1>PRÓXIMAMENTE</h1>
+`
+
+document.body.appendChild(pantallaProximamente)
+
 //Create a new scene
 const scene = new THREE.Scene()
 
@@ -1297,6 +1385,36 @@ cerrarPanelLogo.addEventListener('click', () => {
 
 })
 
+botonMapaEntrada.addEventListener('click', () => {
+
+    panelMapa.classList.remove('visible')
+
+    pantallaProximamente.classList.remove('visible')
+
+    setTimeout(() => {
+
+        window.location.reload()
+
+    }, 500)
+
+})
+
+botonMapaNichos.addEventListener('click', () => {
+
+    panelMapa.classList.remove('visible')
+
+    pantallaProximamente.classList.add('visible')
+
+})
+
+botonMapaEstacionamiento.addEventListener('click', () => {
+
+    panelMapa.classList.remove('visible')
+
+    pantallaProximamente.classList.add('visible')
+
+})
+
 renderer.domElement.addEventListener('click', (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1
 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
@@ -1408,7 +1526,7 @@ if (progreso >= 1) {
 
             setTimeout(() => {
                 mensajeBienvenida.classList.remove('visible')
-            }, 4000)
+            }, 1500)
 
         }, 500)
     }
