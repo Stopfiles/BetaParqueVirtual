@@ -61,6 +61,12 @@ document.body.appendChild(panelLogo)
 
 const cerrarPanelLogo = document.getElementById('cerrarPanelLogo')
 
+const fondoOscuroLetrero = document.createElement('div')
+
+fondoOscuroLetrero.id = 'fondoOscuroLetrero'
+
+document.body.appendChild(fondoOscuroLetrero)
+
 const panelLetrero = document.createElement('div')
 
 panelLetrero.id = 'panelLetrero'
@@ -75,8 +81,6 @@ panelLetrero.innerHTML = `
 `
 
 document.body.appendChild(panelLetrero)
-
-panelLetrero.style.display = 'none'
 
 const tituloLetrero =
     document.getElementById('tituloLetrero')
@@ -257,6 +261,8 @@ let moviendoLetrero = false
 let camaraBloqueada = false
 let letreroAbierto = false
 let cerrandoLetrero = false
+
+let clonLetrero = null
 
 let posicionOriginalLetrero = new THREE.Vector3()
 let posicionDestinoLetrero = new THREE.Vector3()
@@ -949,6 +955,26 @@ function moverLetreroFrenteCamara(letrero) {
 
     if (moviendoLetrero) return
 
+        // Crear clon visual en la posición original
+    clonLetrero = letrero.clone(true)
+
+    clonLetrero.position.copy(letrero.position)
+    clonLetrero.quaternion.copy(letrero.quaternion)
+    clonLetrero.scale.copy(letrero.scale)
+
+    clonLetrero.traverse((child) => {
+
+        if (child.isMesh) {
+
+            child.castShadow = false
+            child.receiveShadow = false
+
+        }
+
+    })
+
+    letrero.parent.add(clonLetrero)
+
     moviendoLetrero = true
         camaraBloqueada = true
         cerrandoLetrero = false
@@ -1097,6 +1123,8 @@ function cerrarLetrero() {
     if (!letreroActivo || moviendoLetrero) return
 
     panelLetrero.classList.remove('visible')
+    fondoOscuroLetrero.classList.remove('visible')
+    
     cerrandoLetrero = true
 
     posicionOriginalLetrero.copy(
@@ -1428,13 +1456,23 @@ if (progreso >= 1) {
     if (cerrandoLetrero) {
 
         camaraBloqueada = false
+
+            if (clonLetrero) {
+
+        clonLetrero.parent.remove(clonLetrero)
+        clonLetrero = null
+
+    }
+
         letreroActivo = null
         cerrandoLetrero = false
 
     } else {
 
         letreroAbierto = true
-        panelLetrero.classList.add('visible')
+
+panelLetrero.classList.add('visible')
+        fondoOscuroLetrero.classList.add('visible')
     }
 }
 }

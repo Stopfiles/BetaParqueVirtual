@@ -235,7 +235,7 @@ canvas {
     left: 50%;
     top: 50%;
 
-    width: min(380px, 80vw);
+    width: min(760px, 80vw);
 
     color: white;
 
@@ -265,10 +265,9 @@ canvas {
 }
 
 #panelLetrero .contenidoPanel {
-    padding: 28px;
-
+    padding: 60px;
+    min-height: 300px;
     background: rgba(16, 28, 44, 0.92);
-
     border-radius: 6px;
 }
 
@@ -309,4 +308,22 @@ canvas {
     cursor: pointer;
 
     border-radius: 3px;
+}
+#fondoOscuroLetrero {
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity 0.8s ease;
+
+    z-index: 25;
+}
+
+#fondoOscuroLetrero.visible {
+    opacity: 1;
 }
