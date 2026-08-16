@@ -10,7 +10,9 @@ body {
 
 canvas {
     display: block;
+    touch-action: none;
 }
+
 #pantallaCarga {
     position: fixed;
     inset: 0;
@@ -46,8 +48,6 @@ canvas {
 
     font-family: Arial, sans-serif;
     font-size: 14px;
-
-    letter-spacing: 2px;
 }
 
 #pantallaCarga .puntos {
@@ -65,16 +65,16 @@ canvas {
     left: 50%;
     bottom: 12%;
     transform: translateX(-50%);
-    
+
     text-align: center;
-    
+
     color: white;
-    
+
     opacity: 0;
     pointer-events: none;
-    
+
     transition: opacity 1.5s ease;
-    
+
     z-index: 10;
 }
 
@@ -93,10 +93,7 @@ canvas {
     font-size: 1rem;
     opacity: 0.8;
 }
-canvas {
-    display: block;
-    touch-action: none;
-}
+
 #indicadorInteractivo {
     position: fixed;
 
@@ -124,111 +121,22 @@ canvas {
 #indicadorInteractivo.visible {
     opacity: 1;
 }
-#panelCarteles {
-    position: fixed;
 
-    right: 5%;
-    top: 50%;
-
-    transform: translateY(-50%) translateX(30px);
-
-    width: min(380px, 80vw);
-
-    padding: 28px;
-
-    background: rgba(16, 28, 44, 0.92);
-
-    color: white;
-
-    font-family: Arial, sans-serif;
-
-    border-radius: 6px;
-
-    opacity: 0;
-
-    pointer-events: none;
-
-    transition:
-        opacity 0.8s ease,
-        transform 0.8s ease;
-
-    z-index: 20;
-}
-
-#panelCarteles.visible {
-    opacity: 1;
-
-    transform: translateY(-50%) translateX(0);
-        pointer-events: auto;
-}
-
-#panelCarteles h2 {
-    margin: 0 0 12px;
-
-    font-size: 1.6rem;
-
-    font-weight: 400;
-}
-
-#panelCarteles p {
-    margin: 0;
-
-    line-height: 1.6;
-
-    opacity: 0.8;
-}
-#cerrarPanelCarteles {
-    margin-top: 24px;
-
-    padding: 8px 18px;
-
-    background: transparent;
-
-    border: 1px solid rgba(255, 255, 255, 0.5);
-
-    color: white;
-
-    font-family: Arial, sans-serif;
-    font-size: 13px;
-
-    letter-spacing: 1px;
-
-    cursor: pointer;
-
-    border-radius: 3px;
-
-    transition:
-        background 0.3s ease,
-        border-color 0.3s ease;
-}
-
-#cerrarPanelCarteles:hover {
-    background: rgba(255, 255, 255, 0.12);
-
-    border-color: white;
-}
+#panelCarteles,
 #panelLogo {
     position: fixed;
 
-    left: 5%;
     top: 50%;
 
-    transform: translateY(-50%) translateX(-30px);
-
     width: min(380px, 80vw);
-
-    padding: 28px;
-
-    background: rgba(16, 28, 44, 0.92);
 
     color: white;
 
     font-family: Arial, sans-serif;
 
-    border-radius: 6px;
+    text-align: center;
 
     opacity: 0;
-
     pointer-events: none;
 
     transition:
@@ -238,6 +146,19 @@ canvas {
     z-index: 20;
 }
 
+#panelCarteles {
+    right: 5%;
+
+    transform: translateY(-50%) translateX(30px);
+}
+
+#panelLogo {
+    left: 5%;
+
+    transform: translateY(-50%) translateX(-30px);
+}
+
+#panelCarteles.visible,
 #panelLogo.visible {
     opacity: 1;
 
@@ -246,6 +167,16 @@ canvas {
     pointer-events: auto;
 }
 
+#panelCarteles .contenidoPanel,
+#panelLogo .contenidoPanel {
+    padding: 28px;
+
+    background: rgba(16, 28, 44, 0.92);
+
+    border-radius: 6px;
+}
+
+#panelCarteles h2,
 #panelLogo h2 {
     margin: 0 0 12px;
 
@@ -254,6 +185,7 @@ canvas {
     font-weight: 400;
 }
 
+#panelCarteles p,
 #panelLogo p {
     margin: 0;
 
@@ -262,10 +194,13 @@ canvas {
     opacity: 0.8;
 }
 
+#cerrarPanelCarteles,
 #cerrarPanelLogo {
-    margin-top: 24px;
+    display: block;
 
-    padding: 8px 18px;
+    margin: 6px auto 0;
+
+    padding: 4px 12px;
 
     background: transparent;
 
@@ -274,9 +209,10 @@ canvas {
     color: white;
 
     font-family: Arial, sans-serif;
-    font-size: 13px;
 
-    letter-spacing: 1px;
+    font-size: 11px;
+
+    letter-spacing: 0.8px;
 
     cursor: pointer;
 
@@ -287,8 +223,90 @@ canvas {
         border-color 0.3s ease;
 }
 
+#cerrarPanelCarteles:hover,
 #cerrarPanelLogo:hover {
     background: rgba(255, 255, 255, 0.12);
 
     border-color: white;
+}
+#panelLetrero {
+    position: fixed;
+
+    left: 50%;
+    top: 50%;
+
+    width: min(380px, 80vw);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    text-align: center;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transform: translate(-50%, -50%) translateY(30px);
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease;
+
+    z-index: 30;
+}
+
+#panelLetrero.visible {
+    opacity: 1;
+
+    pointer-events: auto;
+
+    transform: translate(-50%, -50%) translateY(0);
+}
+
+#panelLetrero .contenidoPanel {
+    padding: 28px;
+
+    background: rgba(16, 28, 44, 0.92);
+
+    border-radius: 6px;
+}
+
+#panelLetrero h2 {
+    margin: 0 0 12px;
+
+    font-size: 1.6rem;
+    font-weight: 400;
+}
+
+#panelLetrero p {
+    margin: 0;
+
+    line-height: 1.6;
+
+    opacity: 0.8;
+}
+
+#cerrarPanelLetrero {
+    display: block;
+
+    margin: 6px auto 0;
+
+    padding: 4px 12px;
+
+    background: transparent;
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 11px;
+
+    letter-spacing: 0.8px;
+
+    cursor: pointer;
+
+    border-radius: 3px;
 }

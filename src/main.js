@@ -32,9 +32,10 @@ const panelCarteles = document.createElement('div')
 panelCarteles.id = 'panelCarteles'
 
 panelCarteles.innerHTML = `
-    <h2>Carteles</h2>
-
-    <p>Aquí podremos colocar la información de esta sección.</p>
+    <div class="contenidoPanel">
+        <h2>Carteles</h2>
+        <p>Aquí podremos colocar la información de esta sección.</p>
+    </div>
 
     <button id="cerrarPanelCarteles">Cerrar</button>
 `
@@ -48,9 +49,10 @@ const panelLogo = document.createElement('div')
 panelLogo.id = 'panelLogo'
 
 panelLogo.innerHTML = `
-    <h2>San Martín</h2>
-
-    <p>Aquí podremos colocar la información de Parque Funerario San Martín.</p>
+    <div class="contenidoPanel">
+        <h2>San Martín</h2>
+        <p>Aquí podremos colocar la información de Parque Funerario San Martín.</p>
+    </div>
 
     <button id="cerrarPanelLogo">Cerrar</button>
 `
@@ -58,6 +60,38 @@ panelLogo.innerHTML = `
 document.body.appendChild(panelLogo)
 
 const cerrarPanelLogo = document.getElementById('cerrarPanelLogo')
+
+const panelLetrero = document.createElement('div')
+
+panelLetrero.id = 'panelLetrero'
+
+panelLetrero.innerHTML = `
+    <div class="contenidoPanel">
+        <h2 id="tituloLetrero"></h2>
+        <p id="textoLetrero"></p>
+    </div>
+
+    <button id="cerrarPanelLetrero">Cerrar</button>
+`
+
+document.body.appendChild(panelLetrero)
+
+panelLetrero.style.display = 'none'
+
+const tituloLetrero =
+    document.getElementById('tituloLetrero')
+
+const textoLetrero =
+    document.getElementById('textoLetrero')
+
+const cerrarPanelLetrero =
+    document.getElementById('cerrarPanelLetrero')
+
+cerrarPanelLetrero.addEventListener('click', () => {
+
+    cerrarLetrero()
+
+})
 
 //Create a new scene
 const scene = new THREE.Scene()
@@ -105,6 +139,8 @@ const camera = new THREE.PerspectiveCamera(
 //controls.enablePan = false
 camera.position.set(0, 1.7, 20)
 camera.position.y = 1.7
+
+const pmremGenerator = new THREE.PMREMGenerator(renderer)
 //controls.update()
 
 //Setup the sky
@@ -216,6 +252,22 @@ let duracionTransicion = 4500
 
 let seccionDestino = null
 
+let letreroActivo = null
+let moviendoLetrero = false
+let camaraBloqueada = false
+let letreroAbierto = false
+let cerrandoLetrero = false
+
+let posicionOriginalLetrero = new THREE.Vector3()
+let posicionDestinoLetrero = new THREE.Vector3()
+
+let rotacionDestinoLetrero = new THREE.Quaternion()
+let rotacionOriginalLetrero = new THREE.Quaternion()
+
+let tiempoInicioLetrero = 0
+
+const duracionAnimacionLetrero = 1000
+
 const billboards = []
 
 const billboardsNuevos = []
@@ -234,6 +286,8 @@ const pantallaCarga = document.getElementById('pantallaCarga')
 loader.load(
   '/ParquePT4Meshopt.glb',
   function (gltf) {
+
+       console.log('✅ GLB CARGADO CORRECTAMENTE')
 
     const model = gltf.scene
 
@@ -701,8 +755,6 @@ crearCapaNiebla(98, 0.4)
 crearCapaNiebla(100, 1)
 crearCapaNiebla(105, 1.9)
 
-const pmremGenerator = new THREE.PMREMGenerator(renderer)
-
 function actualizarBillboards() {
 
     billboards.forEach(arbol => {
@@ -893,6 +945,184 @@ function irA(punto, mira) {
     camera.rotation.z = 0
 }
 
+function moverLetreroFrenteCamara(letrero) {
+
+    if (moviendoLetrero) return
+
+    moviendoLetrero = true
+        camaraBloqueada = true
+        cerrandoLetrero = false
+
+    letreroActivo = letrero
+    
+    letrero.userData.posicionOriginal =
+    letrero.position.clone()
+
+letrero.userData.rotacionOriginal =
+    letrero.quaternion.clone()
+    
+    if (letrero === letrero1) {
+
+    tituloLetrero.textContent = "Información"
+
+    textoLetrero.textContent =
+        "Aquí podremos colocar la información correspondiente a este letrero."
+
+} else if (letrero === letrero2) {
+
+    tituloLetrero.textContent = "Nuestra historia"
+
+    textoLetrero.textContent =
+        "Aquí podremos colocar la información correspondiente a este letrero."
+
+}
+
+    rotacionOriginalLetrero.copy(
+    letrero.quaternion
+)
+
+    // -------------------------
+    // POSICIÓN ORIGINAL
+    // -------------------------
+
+    const posicionMundo = new THREE.Vector3()
+
+    letrero.getWorldPosition(posicionMundo)
+
+    posicionOriginalLetrero.copy(posicionMundo)
+
+
+    // -------------------------
+    // POSICIÓN DESTINO
+    // -------------------------
+
+    const direccion = new THREE.Vector3()
+
+    camera.getWorldDirection(direccion)
+
+    posicionDestinoLetrero.copy(
+        camera.position
+    )
+
+    posicionDestinoLetrero.add(
+        direccion.multiplyScalar(3)
+    )
+
+
+    // -------------------------
+    // CARA AMPLIA DEL LETRERO
+    // -------------------------
+
+    // El letrero mide aproximadamente:
+    // X = grosor
+    // Y = alto
+    // Z = ancho
+    //
+    // Por lo tanto su cara amplia
+    // tiene normal en X.
+
+    const direccionHaciaCamara =
+        new THREE.Vector3(
+            camera.position.x - posicionDestinoLetrero.x,
+            0,
+            camera.position.z - posicionDestinoLetrero.z
+        )
+
+    direccionHaciaCamara.normalize()
+
+
+    // Eje que sale perpendicularmente
+    // de la cara amplia del letrero.
+
+    const normalCara =
+        new THREE.Vector3(1, 0, 0)
+
+
+    // Rotación mundial deseada:
+    // X del letrero → cámara
+
+    const rotacionMundoDestino =
+        new THREE.Quaternion()
+
+    rotacionMundoDestino.setFromUnitVectors(
+        normalCara,
+        direccionHaciaCamara
+    )
+
+const ajuste = new THREE.Quaternion()
+
+ajuste.setFromAxisAngle(
+    new THREE.Vector3(0, 1, 0),
+    THREE.MathUtils.degToRad(-155)
+)
+
+rotacionMundoDestino.multiply(ajuste)
+
+    // -------------------------
+    // CONVERTIR WORLD → LOCAL
+    // -------------------------
+
+    const rotacionPadre =
+        new THREE.Quaternion()
+
+    if (letrero.parent) {
+
+        letrero.parent.getWorldQuaternion(
+            rotacionPadre
+        )
+
+    }
+
+    const inversaPadre =
+        rotacionPadre.clone().invert()
+
+
+    rotacionDestinoLetrero.copy(
+        inversaPadre
+    ).multiply(
+        rotacionMundoDestino
+    )
+
+
+    // -------------------------
+    // COMIENZA LA ANIMACIÓN
+    // -------------------------
+
+    tiempoInicioLetrero =
+        performance.now()
+}
+
+function cerrarLetrero() {
+
+    if (!letreroActivo || moviendoLetrero) return
+
+    panelLetrero.classList.remove('visible')
+    cerrandoLetrero = true
+
+    posicionOriginalLetrero.copy(
+        letreroActivo.position
+    )
+
+    rotacionOriginalLetrero.copy(
+        letreroActivo.quaternion
+    )
+
+    posicionDestinoLetrero.set(
+        letreroActivo.userData.posicionOriginal.x,
+        letreroActivo.userData.posicionOriginal.y,
+        letreroActivo.userData.posicionOriginal.z
+    )
+
+    rotacionDestinoLetrero.copy(
+        letreroActivo.userData.rotacionOriginal
+    )
+
+    moviendoLetrero = true
+    letreroAbierto = false
+
+    tiempoInicioLetrero = performance.now()
+}
+
 const raycaster = new THREE.Raycaster()
 //Donde hace click el usuario
 const mouse = new THREE.Vector2()
@@ -907,6 +1137,8 @@ document.body.appendChild(indicadorInteractivo)
 
 renderer.domElement.addEventListener('pointerdown', () => {
 
+    if (camaraBloqueada) return
+
     arrastrando = true
 })
 
@@ -916,7 +1148,7 @@ renderer.domElement.addEventListener('pointermove', (event) => {
     // MOVIMIENTO DE CÁMARA
     // =========================
 
-    if (arrastrando && !moviendoCamara) {
+    if (arrastrando && !moviendoCamara && !camaraBloqueada) {
 
         camera.rotation.y -= event.movementX * 0.005
         camera.rotation.x -= event.movementY * 0.003
@@ -952,7 +1184,7 @@ if (objeto !== objetoHover) {
 
     objetoHover = objeto
 
-   if (objeto.name === "BotonEntrada") {
+if (objeto.name === "BotonEntrada") {
 
     indicadorInteractivo.textContent = "Explorar entrada"
     indicadorInteractivo.classList.add('visible')
@@ -978,6 +1210,18 @@ if (objeto !== objetoHover) {
     hoverEntrada = false
     hoverCarteles = false
     hoverLogo = true
+
+} else if (
+    objeto.name === "Letrero_1" ||
+    objeto.name === "Letrero2"
+) {
+
+    indicadorInteractivo.textContent = "Ver información"
+    indicadorInteractivo.classList.add('visible')
+
+    hoverEntrada = false
+    hoverCarteles = false
+    hoverLogo = false
 
 } else {
 
@@ -1038,6 +1282,18 @@ const intersecciones = raycaster.intersectObjects(
 if (intersecciones.length > 0) {
 
    const nombre = intersecciones[0].object.name
+
+   if (nombre === "Letrero_1") {
+
+    moverLetreroFrenteCamara(letrero1)
+
+}
+
+if (nombre === "Letrero2") {
+
+    moverLetreroFrenteCamara(letrero2)
+
+}
 
 if (nombre === "BotonEntrada") {
     irASuave(entrada, MiraEntrada)
@@ -1100,38 +1356,88 @@ if (progreso >= 1) {
 
     camera.position.copy(posicionDestino)
     camera.quaternion.copy(rotacionDestino)
+
     moviendoCamara = false
 
-if (seccionDestino === "carteles") {
+    if (seccionDestino === "carteles") {
 
-    panelCarteles.classList.add('visible')
+        panelCarteles.classList.add('visible')
+        seccionDestino = null
 
-    seccionDestino = null
+    } else if (seccionDestino === "logo") {
 
-} else if (seccionDestino === "logo") {
+        panelLogo.classList.add('visible')
+        seccionDestino = null
+    }
 
-    panelLogo.classList.add('visible')
+    if (!bienvenidaMostrada) {
 
-    seccionDestino = null
-}
-
-if (!bienvenidaMostrada) {
-
-    bienvenidaMostrada = true
-
-    setTimeout(() => {
-
-        mensajeBienvenida.classList.add('visible')
+        bienvenidaMostrada = true
 
         setTimeout(() => {
-            mensajeBienvenida.classList.remove('visible')
-        }, 4000)
 
-    }, 500)
+            mensajeBienvenida.classList.add('visible')
 
+            setTimeout(() => {
+                mensajeBienvenida.classList.remove('visible')
+            }, 4000)
+
+        }, 500)
+    }
 }
 }
 
+}
+
+if (moviendoLetrero && letreroActivo) {
+
+    const tiempoActual = performance.now()
+
+    const progreso = Math.min(
+        (tiempoActual - tiempoInicioLetrero) /
+        duracionAnimacionLetrero,
+        1
+    )
+
+    const progresoSuave =
+        easeInOutSine(progreso)
+
+    letreroActivo.position.lerpVectors(
+        posicionOriginalLetrero,
+        posicionDestinoLetrero,
+        progresoSuave
+    )
+
+    letreroActivo.quaternion.slerpQuaternions(
+        rotacionOriginalLetrero,
+        rotacionDestinoLetrero,
+        progresoSuave
+    )
+
+if (progreso >= 1) {
+
+    letreroActivo.position.copy(
+        posicionDestinoLetrero
+    )
+
+    letreroActivo.quaternion.copy(
+        rotacionDestinoLetrero
+    )
+
+    moviendoLetrero = false
+
+    if (cerrandoLetrero) {
+
+        camaraBloqueada = false
+        letreroActivo = null
+        cerrandoLetrero = false
+
+    } else {
+
+        letreroAbierto = true
+        panelLetrero.classList.add('visible')
+    }
+}
 }
 
 actualizarBillboards()
@@ -1214,7 +1520,6 @@ if (luzLogo) {
 
 renderer.render(scene, camera)
 
-}
 
 //----------------//
 
