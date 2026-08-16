@@ -185,6 +185,18 @@ pantallaProximamente.innerHTML = `
 
 document.body.appendChild(pantallaProximamente)
 
+const ventanaImagen = document.createElement('div')
+
+ventanaImagen.id = 'ventanaImagen'
+
+ventanaImagen.innerHTML = `
+    <img src="/Entrada1.jpeg" alt="">
+`
+
+document.body.appendChild(ventanaImagen)
+
+ventanaImagen.classList.add('visible')
+
 //Create a new scene
 const scene = new THREE.Scene()
 
@@ -1405,6 +1417,8 @@ botonMapaNichos.addEventListener('click', () => {
 
     pantallaProximamente.classList.add('visible')
 
+    ventanaImagen.classList.remove('visible')
+
 })
 
 botonMapaEstacionamiento.addEventListener('click', () => {
@@ -1412,6 +1426,8 @@ botonMapaEstacionamiento.addEventListener('click', () => {
     panelMapa.classList.remove('visible')
 
     pantallaProximamente.classList.add('visible')
+
+    ventanaImagen.classList.remove('visible')
 
 })
 
