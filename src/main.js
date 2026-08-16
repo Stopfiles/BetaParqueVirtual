@@ -1385,7 +1385,6 @@ if (progreso >= 1) {
         }, 500)
     }
 }
-}
 
 }
 
@@ -1520,6 +1519,7 @@ if (luzLogo) {
 
 renderer.render(scene, camera)
 
+}
 
 //----------------//
 
