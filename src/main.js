@@ -526,7 +526,7 @@ botonLogo.material.opacity = 0
 luzEntrada = new THREE.PointLight(
     0xfff1c7,
     0.8,
-    500
+    10
 )
 
 botonEntrada.getWorldPosition(posicionPunto)
@@ -539,7 +539,7 @@ scene.add(luzEntrada)
 luzCarteles = new THREE.PointLight(
     0xfff1c7,
     0.8,
-    500
+    10
 )
 
 botonCarteles.getWorldPosition(posicionPunto)
@@ -552,7 +552,7 @@ scene.add(luzCarteles)
 luzLogo = new THREE.PointLight(
     0xfff1c7,
     0.8,
-    500
+    10
 )
 
 botonLogo.getWorldPosition(posicionPunto)
