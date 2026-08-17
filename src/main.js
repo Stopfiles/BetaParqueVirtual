@@ -394,7 +394,7 @@ const pantallaCarga = document.getElementById('pantallaCarga')
 
 //Loader para el modelo GLB 
 loader.load(
-  'https://github.com/Stopfiles/BetaParqueVirtual/releases/download/modelo-3d-v1/ParquePT6Meshopt.glb',
+  'https://parque-modelo.stopfiles14.workers.dev/',
   function (gltf) {
 
     const model = gltf.scene
