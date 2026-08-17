@@ -865,12 +865,40 @@ crearCapaNiebla(105, 1.9)
 
 function actualizarBillboards() {
 
+    const direccionCamara = new THREE.Vector3()
+
+    camera.getWorldDirection(direccionCamara)
+
     billboards.forEach(arbol => {
 
-            arbol.castShadow = false
-    arbol.receiveShadow = false
-        
+        arbol.castShadow = false
+        arbol.receiveShadow = false
         arbol.renderOrder = 2
+
+        // Durante las transiciones solo actualizamos
+        // los billboards que están delante de la cámara.
+        if (moviendoCamara) {
+
+            const direccionArbol = new THREE.Vector3(
+                arbol.position.x - camera.position.x,
+                0,
+                arbol.position.z - camera.position.z
+            )
+
+            direccionArbol.normalize()
+
+            const direccionCamaraHorizontal = new THREE.Vector3(
+                direccionCamara.x,
+                0,
+                direccionCamara.z
+            ).normalize()
+
+            const visible = direccionCamaraHorizontal.dot(
+                direccionArbol
+            ) > 0
+
+            if (!visible) return
+        }
 
         const dx = camera.position.x - arbol.position.x
         const dz = camera.position.z - arbol.position.z
@@ -881,15 +909,39 @@ function actualizarBillboards() {
 
     })
 
-        billboardsNuevos.forEach(arbol => {
+
+    billboardsNuevos.forEach(arbol => {
+
+        if (moviendoCamara) {
+
+            const direccionArbol = new THREE.Vector3(
+                arbol.position.x - camera.position.x,
+                0,
+                arbol.position.z - camera.position.z
+            )
+
+            direccionArbol.normalize()
+
+            const direccionCamaraHorizontal = new THREE.Vector3(
+                direccionCamara.x,
+                0,
+                direccionCamara.z
+            ).normalize()
+
+            const visible = direccionCamaraHorizontal.dot(
+                direccionArbol
+            ) > 0
+
+            if (!visible) return
+        }
 
         const dx = camera.position.x - arbol.position.x
         const dz = camera.position.z - arbol.position.z
 
         const angulo = Math.atan2(dx, dz)
 
-arbol.userData.rotacionBillboardBase = angulo
-arbol.rotation.y = angulo
+        arbol.userData.rotacionBillboardBase = angulo
+        arbol.rotation.y = angulo
 
     })
 
