@@ -390,7 +390,7 @@ const pantallaCarga = document.getElementById('pantallaCarga')
 
 //Loader para el modelo GLB 
 loader.load(
-  '/ParquePT4Meshopt.glb',
+  '/ParquePT5Meshopt.glb',
   function (gltf) {
 
        console.log('✅ GLB CARGADO CORRECTAMENTE')
