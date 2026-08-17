@@ -10,6 +10,8 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true
 })
 
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+
 renderer.setSize(window.innerWidth, window.innerHeight)
 
 renderer.shadowMap.enabled = true
@@ -337,6 +339,8 @@ let MiraLogo
 let arrastrando = false
 let moviendoCamara = false
 
+let camaraCambio = true
+
 let posicionInicio = new THREE.Vector3()
 let posicionDestino = new THREE.Vector3()
 let tiempoInicio = 0
@@ -390,10 +394,8 @@ const pantallaCarga = document.getElementById('pantallaCarga')
 
 //Loader para el modelo GLB 
 loader.load(
-  '/ParquePT5Meshopt.glb',
+  '/ParquePT6Meshopt.glb',
   function (gltf) {
-
-       console.log('✅ GLB CARGADO CORRECTAMENTE')
 
     const model = gltf.scene
 
@@ -1035,6 +1037,8 @@ function irASuave(punto, mira, seccion = null) {
     tiempoInicio = performance.now()
 
     moviendoCamara = true
+
+    camaraCambio = true
 }
 
 function irA(punto, mira) {
@@ -1287,6 +1291,8 @@ renderer.domElement.addEventListener('pointermove', (event) => {
         )
 
         camera.rotation.z = 0
+
+    camaraCambio = true
     }
 
 
@@ -1611,7 +1617,16 @@ panelLetrero.classList.add('visible')
 }
 }
 
-actualizarBillboards()
+if (moviendoCamara) {
+    camaraCambio = true
+}
+
+if (camaraCambio) {
+
+    actualizarBillboards()
+
+    camaraCambio = false
+}
 
 const tiempoNiebla = performance.now() * 0.00015
 
