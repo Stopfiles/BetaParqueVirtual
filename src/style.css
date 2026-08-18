@@ -589,3 +589,35 @@ canvas {
     opacity: 0;
     pointer-events: none;
 }
+.barraCarga {
+  width: 280px;
+  height: 8px;
+  margin-top: 20px;
+
+  background: rgba(255, 255, 255, 0.2);
+
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#progresoCarga {
+  width: 0%;
+  height: 100%;
+
+  background: white;
+
+  border-radius: 999px;
+
+  transition: width 0.15s ease;
+}
+
+#porcentajeCarga {
+  margin-top: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+#textoCarga {
+    max-width: 420px;
+    text-align: center;
+    transition: opacity 0.4s ease;
+}

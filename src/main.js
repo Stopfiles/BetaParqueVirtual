@@ -392,6 +392,31 @@ const objetosInteractivos = []
 
 const pantallaCarga = document.getElementById('pantallaCarga')
 
+const frasesCarga = [
+    'Donde honramos tu memoria',
+    'Una alternativa patrimonial pensada para preservar la memoria'
+]
+
+let indiceFrase = 0
+
+const textoCarga = document.getElementById('textoCarga')
+
+const intervaloFrases = setInterval(() => {
+
+    indiceFrase = (indiceFrase + 1) % frasesCarga.length
+
+    textoCarga.style.opacity = '0'
+
+    setTimeout(() => {
+
+        textoCarga.textContent = frasesCarga[indiceFrase]
+
+        textoCarga.style.opacity = '1'
+
+    }, 400)
+
+}, 5000)
+
 //Loader para el modelo GLB 
 loader.load(
   'https://parque-modelo.stopfiles14.workers.dev/',
@@ -683,6 +708,10 @@ MiraLogo = model.getObjectByName("MiraLogo")
 tiempoInicio = performance.now()
 moviendoCamara = true
 
+clearInterval(intervaloFrases)
+
+textoCarga.textContent = 'Preparando tu recorrido...'
+
 // Después dejamos descubrir el parque
 setTimeout(() => {
 
@@ -810,6 +839,31 @@ objetosInteractivos.push(botonEntrada)
 objetosInteractivos.push(botonCarteles)
 objetosInteractivos.push(botonLogo)
 
+  },
+
+function (xhr) {
+
+    if (xhr.lengthComputable) {
+
+        const porcentaje = (xhr.loaded / xhr.total) * 100
+
+        document.getElementById('progresoCarga').style.width =
+            `${porcentaje}%`
+
+        document.getElementById('porcentajeCarga').textContent =
+            `${Math.round(porcentaje)}%`
+
+        console.log(
+            `Descargando modelo: ${Math.round(porcentaje)}%`
+        )
+
+    }
+
+},
+
+  function (error) {
+
+    console.error('Error cargando el modelo:', error)
   }
 )
 
