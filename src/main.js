@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
+import { Pathfinding } from 'three-pathfinding'
 
 //Setup the renderer
 const renderer = new THREE.WebGLRenderer({
@@ -390,6 +391,36 @@ const sombrasBillboards = []
 
 const objetosInteractivos = []
 
+const pathfinding = new Pathfinding()
+
+const debugRuta = []
+
+const ZONA_PARQUE = 'parque'
+
+let navMesh = null
+let grupoNavMesh = null
+
+let rutaActual = []
+let indiceRuta = 0
+
+let moviendoRuta = false
+
+const ALTURA_CAMARA = 1.7
+const VELOCIDAD_RECORRIDO = 8
+
+const DISTANCIA_MINIMA_CLICK = 3
+const DISTANCIA_MAXIMA_CLICK = 60
+
+const DISTANCIA_VELOCIDAD_NORMAL = 15
+const DISTANCIA_VELOCIDAD_MAXIMA = 80
+
+const VELOCIDAD_MINIMA = 8
+const VELOCIDAD_MAXIMA = 22
+
+let velocidadActual = VELOCIDAD_RECORRIDO
+
+let direccionSuave = new THREE.Vector3()
+
 const pantallaCarga = document.getElementById('pantallaCarga')
 
 const frasesCarga = [
@@ -419,14 +450,14 @@ const intervaloFrases = setInterval(() => {
 
 //Loader para el modelo GLB 
 loader.load(
-  'https://parque-modelo.stopfiles14.workers.dev/',
+  'ParquePT7Meshopt.glb',
   function (gltf) {
 
     const model = gltf.scene
 
     model.traverse((child) => {
 
-    if (!child.isMesh || !child.material) return
+     if (!child.material) return
 
     if (child.material.name === "Cemento") {
 
@@ -600,6 +631,9 @@ if (posicionesBillboards.has(clave)) {
 }
 }
 })
+// ============================================
+// AJUSTAR TEXTURAS
+// ============================================
 
 model.traverse((child) => {
 
@@ -609,13 +643,74 @@ model.traverse((child) => {
 
         texture.minFilter = THREE.LinearMipmapLinearFilter
         texture.magFilter = THREE.LinearFilter
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy()
+        texture.anisotropy =
+            renderer.capabilities.getMaxAnisotropy()
 
         texture.needsUpdate = true
     }
 
 })
 
+
+// ============================================
+// ENCONTRAR NAVMESH
+// ============================================
+
+model.traverse((child) => {
+
+    if (!child.isMesh) return
+
+    if (child.name === "MapaNV") {
+
+        navMesh = child
+
+        // No queremos verla
+        navMesh.visible = false
+
+        console.log(
+            "✅ NavMesh encontrada:",
+            child.name
+        )
+    }
+
+})
+
+
+// ============================================
+// CREAR ZONA DE PATHFINDING
+// ============================================
+
+if (!navMesh) {
+
+    console.error(
+        "❌ No se encontró MapaNavegacion"
+    )
+
+} else {
+
+    navMesh.updateWorldMatrix(true, false)
+
+    const geometriaNavMesh =
+        navMesh.geometry.clone()
+
+    geometriaNavMesh.applyMatrix4(
+        navMesh.matrixWorld
+    )
+
+    const zona =
+        Pathfinding.createZone(
+            geometriaNavMesh
+        )
+
+    pathfinding.setZoneData(
+        ZONA_PARQUE,
+        zona
+    )
+
+    console.log(
+        "✅ Zona de navegación creada"
+    )
+}
     billboards.forEach(arbol => {
     arbol.castShadow = false
         arbol.receiveShadow = false
@@ -1114,6 +1209,68 @@ function easeInOutSine(t) {
 
 }
 
+function mostrarRutaDebug(ruta) {
+
+    // Borrar ruta anterior
+    debugRuta.forEach(objeto => {
+        scene.remove(objeto)
+    })
+
+    debugRuta.length = 0
+
+    // Crear puntos
+    ruta.forEach((punto, i) => {
+
+        const geometria = new THREE.SphereGeometry(
+            0.3,
+            12,
+            12
+        )
+
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xff0000
+        })
+
+        const esfera = new THREE.Mesh(
+            geometria,
+            material
+        )
+
+        esfera.position.copy(punto)
+
+        scene.add(esfera)
+
+        debugRuta.push(esfera)
+    })
+
+    // Crear línea
+    if (ruta.length > 1) {
+
+        const puntos = ruta.map(
+            punto => punto.clone()
+        )
+
+        const geometriaLinea =
+            new THREE.BufferGeometry().setFromPoints(
+                puntos
+            )
+
+        const materialLinea =
+            new THREE.LineBasicMaterial({
+                color: 0xff0000
+            })
+
+        const linea = new THREE.Line(
+            geometriaLinea,
+            materialLinea
+        )
+
+        scene.add(linea)
+
+        debugRuta.push(linea)
+    }
+}
+
 function irASuave(punto, mira, seccion = null) {
 
     seccionDestino = seccion
@@ -1147,6 +1304,293 @@ function irASuave(punto, mira, seccion = null) {
     camaraCambio = true
 }
 
+function moverAClick(posicion) {
+
+    if (
+        !navMesh ||
+        camaraBloqueada ||
+        moviendoLetrero ||
+        moviendoRuta ||
+        moviendoCamara
+    ) {
+        return
+    }
+
+    // -----------------------------
+    // POSICIÓN DEL JUGADOR
+    // -----------------------------
+
+    const posicionInicio = new THREE.Vector3()
+
+    const rayOrigen = camera.position.clone()
+
+    rayOrigen.y += 2
+
+    const rayDireccion = new THREE.Vector3(
+        0,
+        -1,
+        0
+    )
+
+    const raySuelo = new THREE.Raycaster(
+        rayOrigen,
+        rayDireccion
+    )
+
+    const interseccionInicio =
+        raySuelo.intersectObject(
+            navMesh,
+            true
+        )
+
+    if (interseccionInicio.length === 0) {
+
+        console.warn(
+            "⚠️ No se encontró la posición actual sobre la NavMesh"
+        )
+
+        return
+    }
+
+    posicionInicio.copy(
+        interseccionInicio[0].point
+    )
+
+    // -----------------------------
+    // DISTANCIA AL CLICK
+    // -----------------------------
+
+    const distanciaClick = Math.sqrt(
+        Math.pow(
+            posicion.x - posicionInicio.x,
+            2
+        ) +
+        Math.pow(
+            posicion.z - posicionInicio.z,
+            2
+        )
+    )
+    if (distanciaClick < DISTANCIA_MINIMA_CLICK) {
+
+    console.log(
+        "📍 Click demasiado cerca, ignorado"
+    )
+
+    return
+}
+
+if (distanciaClick > DISTANCIA_MAXIMA_CLICK) {
+
+    console.log(
+        "📍 Click demasiado lejos, ignorado"
+    )
+
+    return
+}
+
+    // -----------------------------
+    // IGNORAR CLICK MUY CERCANO
+    // -----------------------------
+
+    if (distanciaClick < DISTANCIA_MINIMA_CLICK) {
+
+        console.log(
+            "📍 Click demasiado cerca, ignorado"
+        )
+
+        return
+    }
+
+    // -----------------------------
+    // VELOCIDAD SEGÚN DISTANCIA
+    // -----------------------------
+
+    velocidadActual = THREE.MathUtils.lerp(
+        VELOCIDAD_MINIMA,
+        VELOCIDAD_MAXIMA,
+        THREE.MathUtils.clamp(
+            (distanciaClick - DISTANCIA_VELOCIDAD_NORMAL) /
+            (DISTANCIA_VELOCIDAD_MAXIMA - DISTANCIA_VELOCIDAD_NORMAL),
+            0,
+            1
+        )
+    )
+
+    // -----------------------------
+    // GRUPO DE NAVEGACIÓN
+    // -----------------------------
+
+    grupoNavMesh = pathfinding.getGroup(
+        ZONA_PARQUE,
+        posicionInicio
+    )
+
+    if (grupoNavMesh === null) {
+
+        console.warn(
+            "⚠️ No se encontró grupo de navegación"
+        )
+
+        return
+    }
+
+    // -----------------------------
+    // BUSCAR RUTA
+    // -----------------------------
+
+    const ruta = pathfinding.findPath(
+        posicionInicio,
+        posicion,
+        ZONA_PARQUE,
+        grupoNavMesh
+    )
+
+    if (!ruta || ruta.length === 0) {
+
+        console.warn(
+            "⚠️ No existe una ruta hacia ese punto"
+        )
+
+        return
+    }
+
+    console.log(
+        "🧭 Ruta encontrada:",
+        ruta
+    )
+
+    // -----------------------------
+    // INICIAR RECORRIDO
+    // -----------------------------
+
+    rutaActual = ruta
+    indiceRuta = 0
+    direccionSuave.set(0, 0, 0)
+    moviendoRuta = true
+}
+
+function actualizarRuta() {
+
+    if (!moviendoRuta) return
+
+    if (indiceRuta >= rutaActual.length) {
+
+        moviendoRuta = false
+        rutaActual = []
+
+        return
+    }
+
+    const objetivo = rutaActual[indiceRuta]
+
+    // ============================================
+    // DIRECCIÓN HACIA EL WAYPOINT ACTUAL
+    // ============================================
+
+    const dx = objetivo.x - camera.position.x
+    const dz = objetivo.z - camera.position.z
+
+    const distancia = Math.sqrt(
+        dx * dx +
+        dz * dz
+    )
+
+    // ============================================
+    // LLEGAMOS AL WAYPOINT
+    // ============================================
+
+    if (distancia < 0.25) {
+
+        camera.position.x = objetivo.x
+        camera.position.z = objetivo.z
+
+        indiceRuta++
+
+        return
+    }
+
+    // ============================================
+    // DIRECCIÓN DESEADA
+    // ============================================
+
+    const direccionObjetivo = new THREE.Vector3(
+        dx / distancia,
+        0,
+        dz / distancia
+    )
+
+    // ============================================
+    // SUAVIZAR EL CAMBIO DE DIRECCIÓN
+    // ============================================
+
+    if (direccionSuave.lengthSq() === 0) {
+
+        direccionSuave.copy(
+            direccionObjetivo
+        )
+
+    } else {
+
+        direccionSuave.lerp(
+            direccionObjetivo,
+            0.08
+        )
+
+        direccionSuave.normalize()
+    }
+
+    // ============================================
+    // MOVIMIENTO
+    // ============================================
+
+    const paso =
+        VELOCIDAD_RECORRIDO * 0.016
+
+    const movimiento =
+        Math.min(paso, distancia)
+
+    camera.position.x +=
+        direccionSuave.x * movimiento
+
+    camera.position.z +=
+        direccionSuave.z * movimiento
+
+    // ============================================
+    // ALTURA FIJA
+    // ============================================
+
+    camera.position.y = ALTURA_CAMARA
+
+    // ============================================
+    // GIRAR CÁMARA SUAVEMENTE
+    // ============================================
+
+    const direccionMirada =
+        direccionSuave.clone()
+
+    direccionMirada.y = 0
+
+    const anguloObjetivo =
+        Math.atan2(
+            -direccionMirada.x,
+            -direccionMirada.z
+        )
+
+    let diferencia =
+        anguloObjetivo - camera.rotation.y
+
+    // Mantener el ángulo entre -PI y PI
+    diferencia =
+        Math.atan2(
+            Math.sin(diferencia),
+            Math.cos(diferencia)
+        )
+
+    camera.rotation.y +=
+        diferencia * 0.01
+
+    camera.rotation.z = 0
+}
 function irA(punto, mira) {
 
     camera.rotation.order = 'YXZ'
@@ -1544,46 +1988,77 @@ botonMapaEstacionamiento.addEventListener('click', () => {
 })
 
 renderer.domElement.addEventListener('click', (event) => {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-raycaster.setFromCamera(mouse, camera)
 
-const intersecciones = raycaster.intersectObjects(
-    objetosInteractivos,
-    true
-)
+    if (camaraBloqueada) return
 
-if (intersecciones.length > 0) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
 
-   const nombre = intersecciones[0].object.name
+    raycaster.setFromCamera(mouse, camera)
 
-   if (nombre === "Letrero_1") {
+    // ============================================
+    // 1. PRIMERO: BOTONES Y LETREROS
+    // ============================================
 
-    moverLetreroFrenteCamara(letrero1)
+    const interacciones = raycaster.intersectObjects(
+        objetosInteractivos,
+        true
+    )
 
+    if (interacciones.length > 0) {
+
+        const nombre = interacciones[0].object.name
+
+        if (nombre === "Letrero_1") {
+
+            moverLetreroFrenteCamara(letrero1)
+
+            return
+        }
+
+        if (nombre === "Letrero2") {
+
+            moverLetreroFrenteCamara(letrero2)
+
+            return
+        }
+
+        if (nombre === "BotonEntrada") {
+
+            irASuave(entrada, MiraEntrada)
+
+            return
+        }
+
+        if (nombre === "BotonCarteles") {
+
+            irASuave(carteles, MiraCarteles, "carteles")
+
+            return
+        }
+
+        if (nombre === "BotonLogo") {
+
+            irASuave(logo, MiraLogo, "logo")
+
+            return
+        }
+    }
+
+    const interseccionesNavMesh =
+    raycaster.intersectObject(
+        navMesh,
+        true
+    )
+
+if (interseccionesNavMesh.length > 0) {
+
+    const puntoDestino =
+        interseccionesNavMesh[0].point
+
+    moverAClick(puntoDestino)
 }
-
-if (nombre === "Letrero2") {
-
-    moverLetreroFrenteCamara(letrero2)
-
-}
-
-if (nombre === "BotonEntrada") {
-    irASuave(entrada, MiraEntrada)
-}
-
-if (nombre === "BotonCarteles") {
-    irASuave(carteles, MiraCarteles, "carteles")
-}
-
-if (nombre === "BotonLogo") {
-    irASuave(logo, MiraLogo, "logo")
-}
-
-}
-}
-)
+})
 
 window.addEventListener('resize', () => {
 
@@ -1602,6 +2077,8 @@ window.addEventListener('resize', () => {
 function animate() {
 
     requestAnimationFrame(animate)
+
+    actualizarRuta()
 
     if (moviendoCamara) {
 
