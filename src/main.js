@@ -318,11 +318,9 @@ let botonEntrada
 let botonCarteles
 let botonLogo
 
-let luzEntrada
 let luzCarteles
 let luzLogo
 
-let hoverEntrada = false
 let hoverCarteles = false
 let hoverLogo = false
 
@@ -391,6 +389,8 @@ const sombrasBillboards = []
 
 const objetosInteractivos = []
 
+const vegetacionDelanteNiebla = []
+
 const pathfinding = new Pathfinding()
 
 const debugRuta = []
@@ -456,6 +456,20 @@ loader.load(
     const model = gltf.scene
 
     model.traverse((child) => {
+
+        if (child.material?.name === "Leaf_Mat X") {
+
+    child.material = child.material.clone()
+
+    child.material.transparent = true
+    child.material.alphaTest = 0.5
+    child.material.depthWrite = false
+
+    child.renderOrder = 2
+
+    child.material.needsUpdate = true
+
+}
 
      if (!child.material) return
 
@@ -575,6 +589,8 @@ const nombre = child.name.toLowerCase()
 if (
     !nombre.includes("arbol") &&
     !nombre.includes("piedra") &&
+        nombre !== "palm" &&
+    nombre !== "palm.001" &&
     ![
         "plano",
         "plano001",
@@ -750,19 +766,6 @@ botonCarteles.material.opacity = 0
 
 botonLogo.material.transparent = true
 botonLogo.material.opacity = 0
-
-luzEntrada = new THREE.PointLight(
-    0xfff1c7,
-    0.8,
-    10
-)
-
-botonEntrada.getWorldPosition(posicionPunto)
-luzEntrada.position.copy(posicionPunto)
-luzEntrada.position.y += 0.2
-
-scene.add(luzEntrada)
-
 
 luzCarteles = new THREE.PointLight(
     0xfff1c7,
@@ -1561,6 +1564,8 @@ function actualizarRuta() {
 
     camera.position.y = ALTURA_CAMARA
 
+    camaraCambio = true
+
     // ============================================
     // GIRAR CÁMARA SUAVEMENTE
     // ============================================
@@ -1868,21 +1873,10 @@ if (objeto !== objetoHover) {
 
     objetoHover = objeto
 
-if (objeto.name === "BotonEntrada") {
-
-    indicadorInteractivo.textContent = "Explorar entrada"
-    indicadorInteractivo.classList.add('visible')
-
-    hoverEntrada = true
-    hoverCarteles = false
-    hoverLogo = false
-
-} else if (objeto.name === "BotonCarteles") {
+if (objeto.name === "BotonCarteles") {
 
     indicadorInteractivo.textContent = "Explorar carteles"
     indicadorInteractivo.classList.add('visible')
-
-    hoverEntrada = false
     hoverCarteles = true
     hoverLogo = false
 
@@ -1890,8 +1884,6 @@ if (objeto.name === "BotonEntrada") {
 
     indicadorInteractivo.textContent = "Conocer San Martín"
     indicadorInteractivo.classList.add('visible')
-
-    hoverEntrada = false
     hoverCarteles = false
     hoverLogo = true
 
@@ -1902,16 +1894,12 @@ if (objeto.name === "BotonEntrada") {
 
     indicadorInteractivo.textContent = "Ver información"
     indicadorInteractivo.classList.add('visible')
-
-    hoverEntrada = false
     hoverCarteles = false
     hoverLogo = false
 
 } else {
 
     indicadorInteractivo.classList.remove('visible')
-
-    hoverEntrada = false
     hoverCarteles = false
     hoverLogo = false
 }
@@ -1996,10 +1984,6 @@ renderer.domElement.addEventListener('click', (event) => {
 
     raycaster.setFromCamera(mouse, camera)
 
-    // ============================================
-    // 1. PRIMERO: BOTONES Y LETREROS
-    // ============================================
-
     const interacciones = raycaster.intersectObjects(
         objetosInteractivos,
         true
@@ -2025,39 +2009,58 @@ renderer.domElement.addEventListener('click', (event) => {
 
         if (nombre === "BotonEntrada") {
 
-            irASuave(entrada, MiraEntrada)
-
             return
         }
 
         if (nombre === "BotonCarteles") {
 
-            irASuave(carteles, MiraCarteles, "carteles")
+            panelCarteles.classList.add('visible')
 
             return
         }
 
         if (nombre === "BotonLogo") {
 
-            irASuave(logo, MiraLogo, "logo")
+            panelLogo.classList.add('visible')
 
             return
         }
     }
+})
 
-    const interseccionesNavMesh =
-    raycaster.intersectObject(
-        navMesh,
+renderer.domElement.addEventListener('dblclick', (event) => {
+
+    if (camaraBloqueada) return
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+    raycaster.setFromCamera(mouse, camera)
+
+    const interacciones = raycaster.intersectObjects(
+        objetosInteractivos,
         true
     )
 
-if (interseccionesNavMesh.length > 0) {
+    // Si el doble click fue sobre un objeto interactivo,
+    // no intentamos caminar.
+    if (interacciones.length > 0) {
+        return
+    }
 
-    const puntoDestino =
-        interseccionesNavMesh[0].point
+    const interseccionesNavMesh =
+        raycaster.intersectObject(
+            navMesh,
+            true
+        )
 
-    moverAClick(puntoDestino)
-}
+    if (interseccionesNavMesh.length > 0) {
+
+        const puntoDestino =
+            interseccionesNavMesh[0].point
+
+        moverAClick(puntoDestino)
+    }
 })
 
 window.addEventListener('resize', () => {
@@ -2259,16 +2262,6 @@ animacion.objeto.rotation.z =
 tiempoLuz += 0.012
 
 const pulso = (Math.sin(tiempoLuz) + 1) / 2
-
-
-if (luzEntrada) {
-
-    luzEntrada.intensity = hoverEntrada
-        ? 5 + pulso * 2
-        : 2 + pulso * 1
-
-}
-
 
 if (luzCarteles) {
 
